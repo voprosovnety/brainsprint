@@ -1,0 +1,33 @@
+# Dependencies and builds
+node_modules/
+vendor/
+.next/
+out/
+dist/
+build/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+auth.json
+*.pem
+*.key
+
+# Local runtime data and tools
+.tools/
+.local/
+.data/
+*.log
+*.dump
+*.sqlite
+*.sqlite3
+.DS_Store
+
+# Verification output
+coverage/
+playwright-report/
+test-results/
+.phpunit.cache/
+.phpunit.result.cache
