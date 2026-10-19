@@ -8,8 +8,8 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 - Local repository and initial structure are committed; the private remote is https://github.com/voprosovnety/brainsprint.
 - T1 is accepted at `ebacae1` after coordinator inspection of ownership, transactional persistence, retries, configuration pinning, test coverage, and the executor's actual verification record. Its independent chat is `01a1536f-fe7a-7b93-8138-ff3c9bdfe00a`.
 - Local slice: http://127.0.0.1:3000 (web), http://127.0.0.1:8008/up (API); PostgreSQL is loopback-only on port 55432. Startup/shutdown instructions are in README.
-- T1 verification: five PostgreSQL feature tests / 53 assertions, real-cookie HTTP checks, Next production build, TypeScript, mobile/desktop browser interaction and outage recovery. Checks were not repeated unchanged by the coordinator. Hosted CI has not yet been confirmed.
-- T2 is ready for an independent executor; see `tasks/T2_COMPLETE_FUNNEL.md`.
+- T1 verification: five PostgreSQL feature tests / 53 assertions, real-cookie HTTP checks, Next production build, TypeScript, mobile/desktop browser interaction and outage recovery. Checks were not repeated unchanged by the coordinator. Hosted CI run 39230710389 is in progress; its outcome remains unconfirmed.
+- T2 is dispatched to independent local chat `01a15380-b09f-7ab1-aec2-796ea08f30ad`; see `tasks/T2_COMPLETE_FUNNEL.md`.
 - No deployment exists.
 - No paid service activation or public publication is authorized.
 
@@ -19,7 +19,7 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 | --- | --- | --- | --- | --- |
 | T0 | Repository foundation and task organization | Approval | Complete | Initial commit, private remote, documents/contracts, first independent executor dispatched |
 | T1 | First working vertical slice | T0 | Complete | Accepted local slice and verification at `ebacae1`; hosted CI confirmation remains a release follow-up |
-| T2 | Complete configurable funnel | T1 | Ready | Three interactive mechanics, one conditional tutorial branch, pinned versions, navigation, save/error states, polished result and boundary; browser checks during development |
+| T2 | Complete configurable funnel | T1 | Dispatched | Three interactive mechanics, one conditional tutorial branch, pinned versions, navigation, save/error states, polished result and boundary; browser checks during development |
 | T3 | Events, UTM, and landing A/B test | T2 contracts | Planned | Stable pre-render assignment, actual exposures, deduplicated server/client events, correct attribution and conversion denominators; shared aggregate service |
 | T4 | Filament and compact public demo analytics | T3 | Planned | Protected admin reads, useful real metrics, synthetic-only public aggregates using T3 service; no public administrative credentials |
 | T5 | Integration and MVP release preparation | T1–T4 | Planned | Relevant complete checks, independent review of complex changes, visual fixes, current docs, deploy configuration and cost controls; public launch only after approval |
@@ -45,4 +45,4 @@ Optional only after a finished MVP: PostHog integration if it materially improve
 
 ## Immediate next action
 
-Dispatch T2 from its task brief with a fresh context and exclusive implementation ownership. Retrieve its result, assess acceptance criteria, then prepare T3. Preserve existing T1 runs and do not reset the development database for convenience.
+Retrieve T2 progress and completion from its independent chat, assess acceptance criteria, then prepare T3. Preserve existing T1 runs and do not reset the development database for convenience. Confirm the hosted T1 CI outcome before release acceptance.
