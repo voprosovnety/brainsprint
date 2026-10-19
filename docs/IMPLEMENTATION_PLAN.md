@@ -10,8 +10,8 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 - T2 is accepted at `cf4e385` after coordinator inspection of server progression/answer validation and the executor's verification/review record. Its chat is `01a15380-b09f-7ab1-aec2-796ea08f30ad`.
 - Full local funnel: http://127.0.0.1:3000 (web), http://127.0.0.1:8008/up (API); PostgreSQL is loopback-only on port 55432. Startup/shutdown instructions are in README.
 - T2 verification: eleven PostgreSQL tests / 229 assertions, real-cookie HTTP checks, production build, TypeScript, mobile/desktop browser checks including both branches, history, result stability and outage/retry. Independent review findings were fixed. Physical touch and OS-level reduced-motion emulation remain release checks; unchanged successful checks were not repeated by the coordinator.
-- Hosted T1 CI run 39230710389 failed because PHPUnit referenced an empty untracked Unit directory. Coordinator reproduced the exact failure, removed the unused suite at `9b9aa61`, and confirmed all eleven tests are discovered without that directory. Updated code is pushed; hosted outcome remains pending.
-- T3 is ready for an independent executor; see `tasks/T3_ANALYTICS_EXPERIMENT.md`.
+- Hosted T1 CI run 39230710389 failed because PHPUnit referenced an empty untracked Unit directory. Coordinator reproduced the exact failure, removed the unused suite at `9b9aa61`, and confirmed all eleven tests are discovered without that directory. Corrected hosted run 39233834302 passed PostgreSQL tests and production build.
+- T3 is dispatched to independent local chat `01a15399-69c8-7f81-9508-c9e0873f6631`; see `tasks/T3_ANALYTICS_EXPERIMENT.md`.
 - No deployment exists.
 - No paid service activation or public publication is authorized.
 
@@ -22,7 +22,7 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 | T0 | Repository foundation and task organization | Approval | Complete | Initial commit, private remote, documents/contracts, first independent executor dispatched |
 | T1 | First working vertical slice | T0 | Complete | Accepted local slice and verification at `ebacae1`; clean-checkout PHPUnit discovery fixed at `9b9aa61` |
 | T2 | Complete configurable funnel | T1 | Complete | Accepted full funnel at `cf4e385`; eleven PostgreSQL tests, HTTP/browser verification, independent review fixes; no development-data reset |
-| T3 | Events, UTM, and landing A/B test | T2 contracts | Ready | Stable pre-render assignment, actual exposures, deduplicated server/client events, correct attribution and conversion denominators; shared aggregate service |
+| T3 | Events, UTM, and landing A/B test | T2 contracts | Dispatched | Stable pre-render assignment, actual exposures, deduplicated server/client events, correct attribution and conversion denominators; shared aggregate service |
 | T4 | Filament and compact public demo analytics | T3 | Planned | Protected admin reads, useful real metrics, synthetic-only public aggregates using T3 service; no public administrative credentials |
 | T5 | Integration and MVP release preparation | T1–T4 | Planned | Relevant complete checks, independent review of complex changes, visual fixes, current docs, deploy configuration and cost controls; public launch only after approval |
 
@@ -47,4 +47,4 @@ Optional only after a finished MVP: PostHog integration if it materially improve
 
 ## Immediate next action
 
-Dispatch T3 in a fresh independent chat, then review its results and prepare T4. Preserve existing runs, immutable configurations, and synthetic isolation. Confirm corrected hosted CI before release acceptance.
+Retrieve T3 progress/completion, assess its acceptance criteria, and prepare T4. Preserve existing runs, immutable configurations, and synthetic isolation. Hosted CI for T2 plus the clean-checkout fix is confirmed successful.
