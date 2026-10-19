@@ -1,0 +1,38 @@
+name: T1 checks
+on: [push, pull_request]
+jobs:
+  slice:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: brainsprint_test
+          POSTGRES_USER: brainsprint_ci
+          POSTGRES_PASSWORD: ci_ephemeral_only
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U brainsprint_ci -d brainsprint_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, mbstring
+          coverage: none
+          tools: composer:v2
+      - run: composer install --working-dir=apps/api --no-interaction --prefer-dist --no-progress
+      - name: Configure isolated test database
+        run: |
+          cp apps/api/.env.example apps/api/.env
+          php -r '$p="apps/api/.env"; file_put_contents($p, str_replace(["55432", "replace_with_local_username", "replace_with_generated_password"], ["5432", "brainsprint_ci", "ci_ephemeral_only"], file_get_contents($p)));'
+          cd apps/api && php artisan key:generate
+      - run: cd apps/api && php artisan test --compact --filter=MemoryRoundTest
+      - run: npm ci --prefix apps/web --no-audit --no-fund
+      - run: npm run build --prefix apps/web

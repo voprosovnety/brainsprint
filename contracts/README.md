@@ -1,24 +1,20 @@
-# Consumer contract — initial vertical slice
+# Consumer contract
 
-Status: implementation input. These routes are agreed shapes, not working endpoints yet. T1 may refine incidental details while preserving ownership and retry semantics. Convert them to a small machine-readable OpenAPI contract during T1 and make this file an index rather than maintaining duplicate schemas.
+The implemented T1 contract is [openapi.json](openapi.json) (OpenAPI 3.1). Frontend types live in `apps/web/src/lib/api.ts`; server validation lives in `FunnelController`. Changes must keep all three aligned.
 
-Browser requests use the frontend origin; Next.js proxies the allowlisted `/api` routes to Laravel. Forward the session/CSRF cookies safely; do not cache private state. Filament uses its own backend-origin authenticated session.
+The browser uses only the frontend origin. Its allowlisted `/api/v1` proxy forwards Laravel cookies and the CSRF header, preserves every `Set-Cookie`, never caches private state, and rejects foreign write origins. It forwards no browser-controlled identity header. Call `GET /api/v1/bootstrap` first to initialize the normal Laravel session and XSRF cookies; send the URL-decoded XSRF cookie as `X-XSRF-TOKEN` for writes. The session cookie is HttpOnly. Local HTTP is supported; production requires secure cookies and HTTPS.
 
 | Method | Route | Behavior |
 | --- | --- | --- |
-| GET | `/api/v1/bootstrap` | Public active landing/configuration, session-held experiment context when implemented, and current run reference |
-| POST | `/api/v1/runs` | Start or return the session's existing unfinished run |
-| GET | `/api/v1/runs/{run}` | Owner-only confirmed state and result if quiz complete |
-| POST | `/api/v1/runs/{run}/steps/{step}/complete` | Validate allowed step and answer, save once, return canonical next state |
-| POST | `/api/v1/events` | Later T3: bounded allowlisted client exposure events, with retry deduplication |
+| GET | `/api/v1/bootstrap` | Active landing configuration and current session-owned run, including a completed result |
+| POST | `/api/v1/runs` | Return the existing run or create one pinned to the current published version |
+| GET | `/api/v1/runs/{run}` | Owner-only confirmed state; foreign and missing IDs both return 404 |
+| POST | `/api/v1/runs/{run}/steps/{step}/complete` | Validate bounded cells, save atomically, and return persisted result |
 
-The T1 implementation needs only the first four routes. Establish CSRF-cookie initialization using Laravel's normal facilities as needed; do not invent a custom token platform.
+Completion accepts an unordered set of 0–15 cell indices (an empty selection is valid). Repeating the same set returns canonical state. Replacing a confirmed set returns 409. A unique visitor constraint, row lock, transaction, and milestone uniqueness protect retries. Step and quiz completion events are server-only. There is no client event endpoint yet.
 
-## Shared invariants
+T1 deliberately retains one run per anonymous browser session, including after completion: starting again returns that result. A new attempt flow belongs to later progression work. Confirmed state restores through bootstrap; unfinished reveal/selection starts again. Removing cookies removes browser access. IDs alone never authorize reads or writes.
 
-- Derive ownership from the server session, not a request-supplied visitor ID. Public run IDs are not credentials.
-- A run response identifies its public ID, pinned configuration version, current allowed step, completed steps, and optional persisted demo result. Never return a secret session identifier.
-- Completion requests identify the step and bounded answer data. A repeated identical completion returns canonical state; a conflicting replacement of a confirmed answer is rejected clearly.
-- Only Laravel decides next steps and when the quiz has completed. Public configuration contains presentation and bounded parameters; no executable code.
-- Errors have a stable code, actionable message, and field details where relevant. Use ordinary HTTP statuses including 401/403, 409, 422, and 429.
-- T2 adds further screen types to the same contract; T3 adds events and a stable landing variant. Do not implement these subsystems speculatively in T1.
+Configuration is bounded Memory-only JSON; publication inserts a content-addressed immutable version, and runs load their pinned version even if a newer one is published. Editing the source and running the seeder publishes a new version without updating existing rows. No configuration-write endpoint exists.
+
+Errors have `error.code`, `error.message`, and `error.fields`; rate limiting is 60 requests per minute per server session, with `Retry-After`. Production edge abuse protection is a release concern. T2 extends this same funnel with onboarding, further mechanics, and the final boundary; T3 adds experiments and client exposure events. There are no A/B assignments or analytics views in T1.

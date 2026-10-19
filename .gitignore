@@ -31,3 +31,5 @@ playwright-report/
 test-results/
 .phpunit.cache/
 .phpunit.result.cache
+
+*.tsbuildinfo

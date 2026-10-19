@@ -1,0 +1,28 @@
+{
+  "landing": {
+    "eyebrow": "A small challenge. A fresh perspective.",
+    "title": "Make room for a little wonder.",
+    "description": "Pause the scroll. Meet a pattern. See what sticks. A playful minute for your visual memory.",
+    "cta": "Try the memory round"
+  },
+  "steps": [
+    {
+      "id": "memory",
+      "type": "visual_memory",
+      "title": "A moment to remember.",
+      "grid_size": 4,
+      "pattern": [
+        0,
+        3,
+        5,
+        10,
+        12
+      ],
+      "reveal_seconds": 5
+    }
+  ],
+  "result": {
+    "title": "A little curiosity goes a long way.",
+    "disclaimer": "Illustrative demo values \u2014 not calculated from your answers."
+  }
+}

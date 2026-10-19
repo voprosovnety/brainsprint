@@ -1,6 +1,6 @@
 # T1 — first working vertical slice
 
-Status: ready for an independent executor.
+Status: implemented and locally verified; ready for coordinator integration.
 
 ## Goal
 
@@ -51,3 +51,14 @@ No Stripe, payments, subscriptions, scoring engine, Reaction Speed, recovery cod
 ## Completion report
 
 Report briefly in Russian: implementation summary, commit SHA, changed areas, actual tests/browser checks, current local URLs if still running, blockers/limitations, and recommended next task. Do not mark the coordinator's plan complete or publish/deploy. The Product Owner authorizes sending this result to the coordinating chat when a reliable chat identifier is available; otherwise leave the final summary in this chat for coordinator retrieval.
+
+## T1 delivery notes
+
+- Implemented Next.js/React/TypeScript/Tailwind presentation and Laravel 13/PostgreSQL persistence, using committed dependency lockfiles and project-local Composer.
+- Four consumer routes, normal database sessions/CSRF, owner-only access, session-scoped rate limits, pinned content-addressed configuration, idempotent start/completion, and transactional milestones/results are implemented.
+- Landing, one Memory round, and explicitly illustrative result work at mobile and desktop sizes. Refresh restores confirmed state; unfinished reveals restart with clear copy. Result values remain unchanged after reload or a temporary API outage.
+- Actual checks: 5 PostgreSQL feature tests / 53 assertions; real same-origin HTTP cookies/CSRF/origin/ownership/retry/rate-limit check; Next.js production build and TypeScript; real browser at 390×844 and 1440×1000, with keyboard/click selection, reload, and unavailable-API retry.
+- Independent review found shared proxy-IP throttling; replaced with a server-session limiter and verified that exhausting one session leaves another usable.
+- Local services: web `http://127.0.0.1:3000`, API `http://127.0.0.1:8008`, PostgreSQL loopback port 55432. Exact setup/shutdown commands are in README.
+- Limitations: one retained run per anonymous session; no new-attempt flow, other mechanics, onboarding, boundary screen, A/B assignment, analytics, Filament, or deployment. Development HTTP overlap checks do not constitute a multi-worker load test. GitHub Actions workflow is added but a hosted run has not been observed.
+- The coordinating implementation plan was not edited by this executor. Subsequent product work belongs to T2 after coordinator review.
