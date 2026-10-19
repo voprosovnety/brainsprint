@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { api, presentConfiguration, type Answer, type Bootstrap, type DisplayConfiguration, type Run, type Screen } from "@/lib/api";
+import { beforeStart, campaign, recordView } from "@/lib/analytics";
 import { Arrow, Grid, Logic, Memory, Pattern } from "@/components/challenges";
 
 const categories = [
@@ -52,6 +53,8 @@ export default function Home() {
   const runRef = useRef<Run | null>(null);
   const viewRef = useRef("landing");
   const writing = useRef(false);
+  const initialized = useRef(false);
+  const attribution = useRef<Record<string, string> | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const errorPanel = useRef<HTMLDivElement>(null);
   function show(screen: string, replace = false) {
@@ -65,14 +68,16 @@ export default function Home() {
   async function load(initial = false) {
     setBusy(true); setError("");
     try {
-      const b = await api<Bootstrap>("bootstrap");
+      attribution.current ??= campaign();
+      const query = new URLSearchParams(attribution.current).toString();
+      const b = await api<Bootstrap>(`bootstrap${query ? `?${query}` : ""}`);
       setBootstrap(b); accept(b.run); setPending(null); setRestored(!!b.run);
       show(initial ? requested(b.run) : canonical(b.run), true);
     } catch (e) { setError((e as Error).message || "The demo could not open. Please try again."); }
     finally { setBusy(false); }
   }
   useEffect(() => {
-    void load(true);
+    if (!initialized.current) { initialized.current = true; void load(true); }
     function pop() {
       const r = runRef.current;
       setRestored(!!r);
@@ -89,7 +94,12 @@ export default function Home() {
     if (run) { setRestored(true); show(canonical(run)); return; }
     if (writing.current) return;
     writing.current = true; setBusy(true); setError("");
-    try { const r = await api<Run>("runs", {}); accept(r); show(canonical(r)); }
+    try {
+      if (viewRef.current === "landing" && document.visibilityState === "visible") void recordView({ name: "landing_viewed" });
+      await beforeStart();
+      const r = await api<Run>("runs", { attribution: attribution.current || {} });
+      accept(r); show(canonical(r));
+    }
     catch (e) { setError((e as Error).message); }
     finally { writing.current = false; setBusy(false); }
   }
@@ -115,13 +125,39 @@ export default function Home() {
   const locked = busy || !!pending;
   const result = run?.result;
   const currentTitle = config?.steps.find(s => s.id === run?.current_step)?.title;
+  useEffect(() => {
+    if (!bootstrap || view === "done") return;
+    let frame = 0;
+    function expose() {
+      if (document.visibilityState !== "visible") return;
+      // Wait for a painted, visible screen; bootstrap/assignment alone is not exposure.
+      frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => {
+        if (document.visibilityState !== "visible") return;
+        if (view === "landing") void recordView({ name: "landing_viewed" });
+        else if (run && screen) void recordView({
+          name: screen.type === "result" ? "result_viewed" : screen.type === "boundary" ? "paywall_reached" : "step_viewed",
+          run_id: run.id, step_id: view,
+        });
+      }); });
+    }
+    expose();
+    document.addEventListener("visibilitychange", expose);
+    return () => { cancelAnimationFrame(frame); document.removeEventListener("visibilitychange", expose); };
+  // State updates during saves must not fabricate additional screen exposures.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bootstrap, view, run?.id]);
+  const landing = bootstrap?.experiment.variant === "B" ? {
+    eyebrow: "A small change of pace", title: "Follow your\ncuriosity.",
+    description: "Remember a little. Notice something new. Untangle a few clues. Three playful challenges to make room for a fresh perspective.",
+    cta: "Find my rhythm",
+  } : bootstrap ? presentConfiguration(bootstrap.configuration).landing : undefined;
   return <div className="site-shell">
     <header className="site-header"><a className="brand" href="/?screen=landing" aria-label="BrainSprint home" onClick={e => { e.preventDefault(); show("landing"); }}><span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>brain<span>sprint</span><span className="brand-dot">.</span></a><span className="header-note">A little space for your mind</span><span className="demo-tag">The demo edition</span></header>
     <main>
       {!bootstrap ? <section className="loading-panel"><div className="tiny-pattern" aria-hidden="true">✦</div><h1 ref={heading} tabIndex={-1}>A moment to settle in.</h1>{busy ? <p role="status">Preparing your challenge…</p> : <><p role="alert">{error}</p><button className="button" onClick={() => load(true)}>Try again <Arrow /></button></>}</section> : <>
-        {view === "landing" && config && <>
-          <section className="hero"><div className="hero-copy"><p className="eyebrow"><span />{config.landing.eyebrow}</p><h1 ref={heading} tabIndex={-1}>{config.landing.title}</h1><p className="intro">{config.landing.description}</p><button className="button" disabled={busy} onClick={start}>{busy ? "Opening your challenge…" : run ? run.demo_completed ? "Revisit the demo" : result && legacy ? "View my saved result" : "Continue my demo" : config.landing.cta}<Arrow /></button><p className="cta-note">{legacy ? "A memory preview" : "About 3–4 minutes"}<span>·</span>No sign-up<span>·</span>Just curiosity</p></div>
-          <div className="hero-art"><div className="art-top"><span className="mono">A LITTLE PREVIEW</span><span className="art-pill">Look. Remember. Play.</span></div><Grid pattern={[0, 3, 5, 10, 12]} /><div className="art-bottom"><span className="spark" aria-hidden="true">✦</span><p>Look a little closer.<br /><strong>There’s a pattern waiting.</strong></p><span className="orbit" aria-hidden="true">↗</span></div></div></section>
+        {view === "landing" && config && landing && <>
+          <section className={`hero landing-${bootstrap.experiment.variant.toLowerCase()}`}><div className="hero-copy"><p className="eyebrow"><span />{landing.eyebrow}</p><h1 ref={heading} tabIndex={-1}>{landing.title}</h1><p className="intro">{landing.description}</p><button className="button" disabled={busy} onClick={start}>{busy ? "Opening your challenge…" : run ? run.demo_completed ? "Revisit the demo" : result && legacy ? "View my saved result" : "Continue my demo" : landing.cta}<Arrow /></button><p className="cta-note">{legacy ? "A memory preview" : "About 3–4 minutes"}<span>·</span>No sign-up<span>·</span>Just curiosity</p></div>
+          <div className="hero-art"><div className="art-top"><span className="mono">{bootstrap.experiment.variant === "B" ? "THREE LITTLE DISCOVERIES" : "A LITTLE PREVIEW"}</span><span className="art-pill">Look. Remember. Play.</span></div>{bootstrap.experiment.variant === "B" ? <div className="discovery-preview" aria-hidden="true">{categories.map(c => <div key={c.type}><span>{c.icon}</span><p>{c.title}</p></div>)}</div> : <Grid pattern={[0, 3, 5, 10, 12]} />}<div className="art-bottom"><span className="spark" aria-hidden="true">✦</span><p>Look a little closer.<br /><strong>There’s a pattern waiting.</strong></p><span className="orbit" aria-hidden="true">↗</span></div></div></section>
           <section className="how"><div className="how-title"><p className="eyebrow">A change of pace</p><h2>Less scrolling.<br />More noticing.</h2></div>{categories.map(c => <div className="how-step" key={c.type}><span className="step-icon" aria-hidden="true">{c.icon}</span><h3>{c.title}</h3><p>{c.description}</p></div>)}</section>
         </>}
         {screen && !["result", "boundary"].includes(screen.type) && <section className={`round-layout variant-${screen.variant || "standard"}`}>

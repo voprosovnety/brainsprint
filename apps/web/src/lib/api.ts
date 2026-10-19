@@ -38,13 +38,15 @@ export type Run = {
   demo_completed: boolean;
   result: null | { kind: "illustrative_demo"; disclaimer: string; indicators: { label: string; value: number }[] };
 };
-export type Bootstrap = { configuration_version: string; configuration: Configuration; run: Run | null };
-export async function api<T>(path: string, data?: unknown): Promise<T> {
+export type Experiment = { id: string; variant: "A" | "B" };
+export type Bootstrap = { experiment: Experiment; configuration_version: string; configuration: Configuration; run: Run | null };
+export async function api<T>(path: string, data?: unknown, signal?: AbortSignal): Promise<T> {
   const token = document.cookie
     .split("; ")
     .find((c) => c.startsWith("XSRF-TOKEN="))
     ?.slice(11);
   const response = await fetch(`/api/v1/${path}`, {
+    signal,
     method: data === undefined ? "GET" : "POST",
     credentials: "same-origin",
     cache: "no-store",

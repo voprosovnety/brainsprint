@@ -12,6 +12,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Next proxies all browsers through one origin: do not key every visitor by its IP.
+        RateLimiter::for('analytics', fn (Request $request) => Limit::perMinute(40)->by(hash('sha256', $request->session()->getId())));
         RateLimiter::for('consumer', fn (Request $request) => Limit::perMinute(60)->by(hash('sha256', $request->session()->getId())));
     }
 }

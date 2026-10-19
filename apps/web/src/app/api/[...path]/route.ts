@@ -4,8 +4,16 @@ export const runtime = "nodejs";
 const run = "[0-9a-f-]{36}";
 const routes = {
   GET: new RegExp(`^v1/(bootstrap|runs/${run})$`),
-  POST: new RegExp(`^v1/runs(/${run}/steps/[a-z][a-z0-9_-]{0,39}/complete)?$`),
+  POST: new RegExp(`^v1/(events|runs(/${run}/steps/[a-z][a-z0-9_-]{0,39}/complete)?)$`),
 };
+function attributionQuery(params: URLSearchParams) {
+  const bounded = new URLSearchParams();
+  for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+    const value = params.get(key);
+    if (value !== null) bounded.set(key, value);
+  }
+  return bounded.size ? `?${bounded}` : "";
+}
 async function proxy(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> },
@@ -48,7 +56,7 @@ async function proxy(
     if (body && new TextEncoder().encode(body).length > 4096)
       return new NextResponse(null, { status: 413 });
     const upstream = await fetch(
-      `${process.env.API_ORIGIN || "http://127.0.0.1:8008"}/api/${path}`,
+      `${process.env.API_ORIGIN || "http://127.0.0.1:8008"}/api/${path}${path === "v1/bootstrap" ? attributionQuery(request.nextUrl.searchParams) : ""}`,
       {
         method,
         headers,

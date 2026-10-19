@@ -8,11 +8,11 @@ One configurable, English demo: landing → onboarding → Memory practice → t
 
 Memory reconstructs a hidden grid, Pattern chooses the next visual element, and Logic arranges cards by clues with tap-to-swap, keyboard arrows, explicit move controls and dragging. The light-blue interface supports mobile/desktop, visible focus, reduced motion, saving and retry states. Expect roughly 3–4 minutes at a relaxed pace; answers have no time limit.
 
-Next.js presents the experience and proxies four allowlisted consumer routes. Laravel/PostgreSQL own database-backed anonymous sessions, immutable published versions, validated progression, answers, results and transactional milestones. Three illustrative values are generated once after the challenges and never depend on answers. The disclaimer is prominent: **Illustrative demo values — not calculated from your answers.** This is entertainment, with no IQ, diagnosis or performance score.
+Next.js presents the experience and proxies five allowlisted consumer routes. Laravel/PostgreSQL own database-backed anonymous sessions, immutable published versions, validated progression, answers, results and transactional milestones. Three illustrative values are generated once after the challenges and never depend on answers. The disclaimer is prominent: **Illustrative demo values — not calculated from your answers.** This is entertainment, with no IQ, diagnosis or performance score.
 
 The final consumer screen closes the experience with a real **Finish demo** action. It persists terminal completion separately from quiz completion. There are no prices, subscriptions or checkout. Refresh restores confirmed progress; an unfinished reveal starts again with a notice. Back/Forward reviews saved steps without submitting again, and cannot skip ahead. A save failure retains the submitted answer for an identical retry or offers restoration from the server.
 
-Experiments, attribution, client exposure events and aggregate analytics belong to T3; Filament and the synthetic public view belong to T4. No public deployment exists.
+The landing uses a stable server-assigned A/B experiment, first-touch UTM and actual screen exposure events. One Laravel aggregate service supplies counts, conversions, conditional step exposure, elapsed time and experiment metrics. [Analytics definitions and the T4 API](docs/ANALYTICS.md) document exact cohorts and limitations. Filament and the synthetic public view belong to T4. No public deployment exists.
 
 ## Local requirements
 
@@ -66,7 +66,7 @@ php artisan migrate
 php artisan db:seed
 ```
 
-Configuration source is `apps/api/resources/funnel/brainsprint-v2.json`. The seeder validates screen IDs, enabled screens, content, bounded variants/parameters and explicit transitions, then inserts a content-addressed immutable version. Default transitions plus one tutorial incorrect-answer branch are supported; broken targets, cycles, incomplete paths and branches that do not rejoin are rejected. Array order does not determine progression. To change the experience, edit the source and publish with the seeder; new sessions use it, while existing runs retain their original version. No database reset or migration is needed for T2.
+Configuration source is `apps/api/resources/funnel/brainsprint-v2.json`. The seeder validates screen IDs, enabled screens, content, bounded variants/parameters and explicit transitions, then inserts a content-addressed immutable version. Default transitions plus one tutorial incorrect-answer branch are supported; broken targets, cycles, incomplete paths and branches that do not rejoin are rejected. Array order does not determine progression. To change the experience, edit the source and publish with the seeder; new sessions use it, while existing runs retain their original version. After pulling schema changes, run `php artisan migrate`; migrations preserve saved answers/results and do not backfill invented analytics context.
 
 Historical T1 Memory-only runs continue their original Memory → result path. Their saved answers, result values and completion timestamps are preserved; they do not acquire later screens. `memory-v1.json` remains as a historical fixture. The two preexisting development runs were compared before and after T2 publication; their combined answer/result digest was unchanged.
 
@@ -76,10 +76,10 @@ One run is retained per browser session even after completion. Starting again re
 
 ```sh
 cd apps/api
-php artisan test --compact --filter='MemoryRoundTest|FunnelProgressionTest'
+php artisan test --compact --filter='MemoryRoundTest|FunnelProgressionTest|AnalyticsExperimentTest|AnalyticsAggregateTest'
 ```
 
-Tests require the separate local PostgreSQL database `brainsprint_test`; a guard refuses other database names, remote hosts, and database URLs before migrations. They cover both tutorial paths, all mechanics, publication validation, reconfiguration, historical compatibility, ownership, forbidden transitions, malformed/conflicting answers, persisted results, terminal completion, duplicate milestones and transactional rollback. Test data rolls back.
+Tests require the separate local PostgreSQL database `brainsprint_test`; a guard refuses other database names, remote hosts, and database URLs before migrations. They cover both tutorial paths, all mechanics, publication validation, reconfiguration, historical compatibility, ownership, forbidden transitions, malformed/conflicting answers, persisted results, terminal completion, duplicate milestones and transactional rollback. Analytics suites additionally cover assignment, actual exposures, first-touch UTM, client trust, semantic/UUID deduplication, CSRF, exact real/synthetic cohorts, legacy/branch denominators and timezone/microsecond boundaries. Test data rolls back.
 
 From the repository root, with both servers running:
 
@@ -91,7 +91,7 @@ npm run typecheck --prefix apps/web
 
 The HTTP check completes the full funnel through Next.js with real cookies, CSRF rejection, foreign-origin rejection, concurrent start/completion retries, restoration, cross-session ownership and independent rate limits. It creates a small synthetic development run; no cookies or secrets are printed or saved. Development Laravel's server serializes requests; the checks send overlapping requests, while PostgreSQL uniqueness/row locking enforce retry safety. This is not a load test.
 
-Verification results are recorded in the [T2 delivery notes](docs/tasks/T2_COMPLETE_FUNNEL.md). GitHub Actions runs the focused PostgreSQL feature tests and frontend production build; its hosted execution has not been observed in this session.
+Verification evidence is recorded in the [T2 delivery notes](docs/tasks/T2_COMPLETE_FUNNEL.md) and [T3 delivery notes](docs/tasks/T3_ANALYTICS_EXPERIMENT.md#delivery-evidence). GitHub Actions runs the focused PostgreSQL suites, production build and typecheck. The corrected baseline CI run at `9b9aa61` was observed successful; the T3 commit has not been pushed, so its hosted run has not been observed.
 
 ## Structure and boundaries
 
@@ -103,6 +103,6 @@ Verification results are recorded in the [T2 delivery notes](docs/tasks/T2_COMPL
 | `infra/` | Local PostgreSQL, setup, and focused HTTP check |
 | `docs/` | Architecture, coordinating implementation plan, and task briefs |
 
-No payments, subscriptions, accounts, scoring engine, Reaction Speed, training product, Redis, workers, queues, or PostHog. No A/B assignment or exposure tracking occurs yet. The API rate limit is per server session; release work must add deployment-specific edge protection and retention/deletion policy. Public hosting and paid services require Product Owner approval.
+No payments, subscriptions, accounts, scoring engine, Reaction Speed, training product, Redis, workers, queues, or PostHog. A/B assignment precedes rendering; client analytics delivery has bounded retries and a separate rate budget. Bootstrap alone does not claim exposure. Ordinary aggregates exclude synthetic data; local/testing collection is synthetic by server policy. The API rate limit is per server session; release work must add deployment-specific edge protection and retention/deletion policy. Public hosting and paid services require Product Owner approval.
 
 See [architecture](docs/ARCHITECTURE.md), [consumer contract](contracts/README.md), [T1 brief](docs/tasks/T1_VERTICAL_SLICE.md), and the coordinator-owned [implementation plan](docs/IMPLEMENTATION_PLAN.md).

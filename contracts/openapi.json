@@ -14,7 +14,58 @@
     "/api/v1/bootstrap": {
       "get": {
         "operationId": "bootstrap",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "utm_source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": "First-touch campaign value; ignored after session initialization."
+          },
+          {
+            "name": "utm_medium",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": "First-touch campaign value; ignored after session initialization."
+          },
+          {
+            "name": "utm_campaign",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": "First-touch campaign value; ignored after session initialization."
+          },
+          {
+            "name": "utm_content",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": "First-touch campaign value; ignored after session initialization."
+          },
+          {
+            "name": "utm_term",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            },
+            "description": "First-touch campaign value; ignored after session initialization."
+          }
+        ],
         "responses": {
           "200": {
             "description": "Canonical confirmed state",
@@ -96,7 +147,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Assign the stable landing experiment before rendering, preserve first-touch UTM, and return session-owned progress. This request does not record exposure."
       }
     },
     "/api/v1/runs": {
@@ -201,6 +253,22 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "attribution": {
+                    "$ref": "#/components/schemas/Attribution"
+                  }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -441,6 +509,104 @@
         },
         "description": "Validate a response against the pinned screen, save the answer and milestones atomically, and advance by server transition rules. Same canonical response is idempotent, even on an old completed screen; a different response returns 409. Wrong owner returns 404. Entering result emits quiz_completed once; acknowledging boundary emits demo_completed once. Exposures are not emitted here."
       }
+    },
+    "/api/v1/events": {
+      "post": {
+        "operationId": "recordClientExposure",
+        "summary": "Record an actual visible screen exposure",
+        "description": "CSRF protected; max 4096 bytes; independent 40/minute session rate limit. Retry with the same UUID. Server milestones, identity, configuration, attribution, variant and synthetic flag are forbidden inputs. Views deduplicate semantically by landing visitor/experiment or run/screen, including different UUIDs. Accepted duplicate IDs are no-ops, including IDs reused for another screen. This response does not prove a new insertion. Bootstrap first for landing.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted or already recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "accepted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Screen unavailable or bootstrap missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Event too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF missing or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Analytics rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -642,12 +808,16 @@
                 "type": "null"
               }
             ]
+          },
+          "experiment": {
+            "$ref": "#/components/schemas/Experiment"
           }
         },
         "required": [
           "configuration_version",
           "configuration",
-          "run"
+          "run",
+          "experiment"
         ],
         "additionalProperties": false
       },
@@ -1147,7 +1317,7 @@
                 "maxLength": 120
               },
               "disclaimer": {
-                "const": "Illustrative demo values — not calculated from your answers."
+                "const": "Illustrative demo values \u2014 not calculated from your answers."
               }
             },
             "required": [
@@ -1243,6 +1413,108 @@
           }
         ],
         "description": "Server chooses the shape by pinned screen type: cells for tutorial/memory (bounded by grid_size), choice from pattern options, exact permutation of logic card IDs, acknowledged:true for content/result/boundary. Empty cells are accepted. No client next or branch assertion."
+      },
+      "Attribution": {
+        "type": "object",
+        "properties": {
+          "utm_source": {
+            "type": "string",
+            "maxLength": 120,
+            "pattern": "^[^\\u0000-\\u001F\\u007F]*$"
+          },
+          "utm_medium": {
+            "type": "string",
+            "maxLength": 120,
+            "pattern": "^[^\\u0000-\\u001F\\u007F]*$"
+          },
+          "utm_campaign": {
+            "type": "string",
+            "maxLength": 120,
+            "pattern": "^[^\\u0000-\\u001F\\u007F]*$"
+          },
+          "utm_content": {
+            "type": "string",
+            "maxLength": 120,
+            "pattern": "^[^\\u0000-\\u001F\\u007F]*$"
+          },
+          "utm_term": {
+            "type": "string",
+            "maxLength": 120,
+            "pattern": "^[^\\u0000-\\u001F\\u007F]*$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Experiment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "landing-curiosity-v1"
+          },
+          "variant": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "variant"
+        ],
+        "additionalProperties": false
+      },
+      "ClientEvent": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "enum": [
+              "landing_viewed",
+              "step_viewed",
+              "result_viewed",
+              "paywall_reached"
+            ]
+          },
+          "run_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "step_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "surface": {
+                "type": "string",
+                "enum": [
+                  "page"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "event_id",
+          "name"
+        ],
+        "additionalProperties": false,
+        "description": "Landing: omit run_id/step_id. Other names require an owned run and current or previously completed screen; name must match screen type. All context and timestamps come from the server."
       }
     }
   }

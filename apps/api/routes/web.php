@@ -10,3 +10,5 @@ Route::prefix('api/v1')->middleware([PrivateResponse::class, 'throttle:consumer'
     Route::get('runs/{run}', [FunnelController::class, 'show'])->whereUuid('run');
     Route::post('runs/{run}/steps/{step}/complete', [FunnelController::class, 'complete'])->whereUuid('run');
 });
+
+Route::post('api/v1/events', [FunnelController::class, 'exposure'])->middleware([PrivateResponse::class, 'throttle:analytics']);

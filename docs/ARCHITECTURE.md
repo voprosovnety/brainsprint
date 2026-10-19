@@ -44,13 +44,13 @@ Return the existing active run on duplicate starts. Accept only allowed transiti
 
 ## Analytics and experiment
 
-Taxonomy: `landing_viewed`, `funnel_started`, `step_viewed`, `step_completed`, `quiz_completed`, `result_viewed`, `paywall_reached`, and `demo_completed` when the user finishes the boundary screen.
+One `landing-curiosity-v1` A/B experiment is assigned in the anonymous Laravel session before rendering. A retains published landing content and Memory art; B uses curiosity copy, three-category art and its own CTA, with the same funnel. New runs copy server-controlled assignment and first-touch bounded UTM. Existing runs/configurations remain unchanged; null historical fields are never fabricated.
 
-The server emits successful state transitions; the client reports actual screen exposure through an allowlisted, validated endpoint. Deduplicate event retries by ID and completion milestones by business identity. Keep pseudonymous visitor ID, run ID when present, configuration version, screen ID, variant, timestamps, and bounded UTM fields. Never accept server-only milestone names or a visitor identity chosen by the client.
+Server milestones remain authoritative and transactional. The client reports actual visible landing/screen exposure through a CSRF-protected, bounded allowlist endpoint, with run ownership/current-or-completed screen validation, UUID/semantic deduplication and its own rate budget. Bootstrap and state transitions alone never claim actual exposure. Failed analytics delivery cannot overwrite saved progress.
 
-One landing experiment has A/B content and CTA variants leading to the same funnel. Assign before rendering, persist in the server session, and copy into runs. Persist actual exposure. Measure unique exposed visitors → unique starters for the same variant; also show quiz completion and boundary reach, counts, denominators, and elapsed time. First-touch UTM and run attribution are sufficient; no multichannel model or click-ID integrations are required.
+`App\Analytics\AggregateService::summarize` is the single aggregate-only layer for future Filament and the explicitly synthetic public view. A constrained dataset enum defaults to real; date cohorts and observation windows are bounded. It returns raw counts, numerators, denominators, conditional step metrics, wall-clock quiz elapsed time, first-touch UTM groups and mature exposed-visitor A/B rates. It does not declare a winner. Legacy quiz completion comes from its event, never terminal `completed_at`.
 
-Real statistics exclude synthetic runs and events by default. The public demo explicitly selects synthetic data. Both views use one aggregate service and identical metric definitions. Do not assert a winning variant from insufficient data or invent payment conversions.
+[Analytics definitions](ANALYTICS.md) are the sole reference for exact event authority, deduplication, attribution, trust/delivery limitations, cohort/window rules and T4 calling examples. T4 must authenticate real-data access and hard-code the synthetic dataset for public output; no public/admin analytics endpoint or view is added here.
 
 ## UX, security, and delivery
 

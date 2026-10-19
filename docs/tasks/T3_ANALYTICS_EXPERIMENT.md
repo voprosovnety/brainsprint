@@ -1,7 +1,5 @@
 # T3 — trustworthy events, landing A/B experiment, and shared metrics
 
-Status: ready for an independent executor.
-
 ## Goal and inputs
 
 Add useful Growth Engineering behavior to the existing single BrainSprint funnel: one real landing experiment, UTM attribution, correctly sourced/deduplicated events, and one shared aggregate service for the later Filament and compact public demo views. This task implements the analytics foundation, not two dashboards.
@@ -45,3 +43,16 @@ Independent review of event trust, deduplication, and experiment denominators is
 ## Report
 
 Brief Russian summary: commit, what works, actual tests/browser checks, any hosted CI result, limitations, local URLs, and the aggregate service API T4 should consume. The Product Owner authorized reporting back to coordinator chat `01a14708-527c-7253-9ebf-453f1e5cdf3f`; send the completion summary there when available and leave it as the final response here. Do not edit the coordinating plan or publish/deploy.
+
+## Delivery evidence
+
+- Added nullable context and unique exposure fields to existing tables, with no new domain tables or historical backfill. Migration on the existing development database preserved the answer/result/completion digest of all six preexisting runs.
+- Local PostgreSQL verification: 21 focused tests passed across the combined run and one isolated rate-limit test rerun (the initial harness did not carry cookies on JSON requests; it now does). Suites cover the accepted T1/T2 progression plus event trust, first touch, semantic/UUID retries, CSRF, independent rate budgets, exact real/synthetic aggregates, branching, historical destination eligibility and offset/microsecond cohort boundaries. No full unrelated suite was run.
+- Production `npm run build --prefix apps/web` and `npm run typecheck --prefix apps/web` passed. CI includes both analytics suites and typecheck; the PHPUnit directory-discovery fix is preserved.
+- Real-browser checks used a fresh normal Chrome localhost session (A) and a fresh Chrome Incognito loopback session (B), with no force-variant URL or API. Both landing compositions were visually inspected at desktop and mobile sizes; actual CSS 390px layouts had no horizontal overflow. Heading focus and keyboard CTA outline were verified. Reduced-motion rules were inspected; no OS preference was changed or forced browser media emulation performed. Normal Chrome reported a preexisting extension-injected hydration warning (`bis_*` attributes); the clean Incognito presentation remained functional.
+- A successfully started and saved onboarding while the local event handler was temporarily forced to return 503; that injection was removed immediately after verification. A retained its original `t3-chrome` campaign on run creation. B traversed the explanation branch, both rounds of each mechanic, result, boundary and terminal Finish; Back/Forward, refresh and saved-result restoration were exercised. Its result values remained 87/78/84 on restore.
+- Database observation after browser checks: the completed B run had exactly one `funnel_started`, 9 ordinary screen views, 11 step completions, one quiz completion, one result view, one actual boundary view and one demo completion; its visitor had one landing exposure despite repeated return/refresh. Shared service calls kept real totals at zero while the explicitly synthetic development cohort had eight runs.
+- Independent read-only review found timezone/precision binding loss, a legacy result-to-boundary denominator, an unused B CTA and precision loss in returned cohort metadata. These were fixed; focused aggregate fixtures cover the substantive metric corrections. No additional ownership/context/milestone/dedup issue was reported. Delivery-order undercount during an analytics outage is documented, not backfilled.
+- Hosted baseline [run 39233834302](https://github.com/voprosovnety/brainsprint/actions/runs/39233834302) for `9b9aa61` was observed successful. The T3 commit is local, so no T3 hosted run is claimed.
+
+The concrete T4 interface and all metric definitions are in [analytics definitions](../ANALYTICS.md#shared-service-api): `App\Analytics\AggregateService::summarize(CarbonImmutable $from, CarbonImmutable $to, ?CarbonImmutable $asOf = null, Dataset $dataset = Dataset::Real, int $observationHours = 24): array`. Public callers must hard-code `Dataset::Synthetic`; real-data callers need T4 administrative authentication. No aggregate HTTP endpoint, Filament installation or public dataset seed was introduced. The service is intended for a small demo cohort and loads selected rows into memory. Client exposure remains a bounded, retryable assertion; blocked/lost/delayed delivery can undercount, and no experiment winner is declared.

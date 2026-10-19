@@ -7,17 +7,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Funnel\Answer;
 use App\Funnel\Configuration;
+use App\Funnel\VisitorContext;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class FunnelController extends Controller
 {
     private function visitor(Request $request): string
     {
-        // Stable even when two first writes arrive together after CSRF initialization.
-        $id = $request->session()->get('visitor_id') ?? hash_hmac('sha256', $request->session()->getId(), config('app.key'));
-        $request->session()->put('visitor_id', $id);
-
-        return $id;
+        return VisitorContext::id($request);
     }
 
     private function version(?string $id = null): object
@@ -56,26 +53,31 @@ class FunnelController extends Controller
 
     private function event(string $id, string $name, string $step = ''): void
     {
-        DB::table('events')->insert(['run_id' => $id, 'name' => $name, 'step_id' => $step, 'is_synthetic' => DB::table('funnel_runs')->where('id', $id)->value('is_synthetic'), 'created_at' => now()]);
+        DB::table('events')->insert(array_merge(VisitorContext::run(DB::table('funnel_runs')->find($id)), ['run_id' => $id, 'name' => $name, 'step_id' => $step, 'created_at' => now()->format('Y-m-d H:i:s.uP')]));
     }
 
     public function bootstrap(Request $request)
     {
+        $context = VisitorContext::capture($request, $request->only(VisitorContext::UTM));
         $version = $this->version();
+        $request->session()->put('landing_version', $version->id);
         $run = DB::table('funnel_runs')->where('visitor_id', $this->visitor($request))->first();
 
-        return response()->json(['configuration_version' => $version->id, 'configuration' => json_decode($version->configuration, true), 'run' => $run ? $this->state($run) : null]);
+        return response()->json(['experiment' => ['id' => $context['experiment_id'], 'variant' => $context['variant']], 'configuration_version' => $version->id, 'configuration' => json_decode($version->configuration, true), 'run' => $run ? $this->state($run) : null]);
     }
 
     public function start(Request $request)
     {
-        $state = DB::transaction(function () use ($request) {
+        $request->validate(['attribution' => ['sometimes', 'array']]);
+        abort_if(array_diff(array_keys($request->all()), ['attribution']), 422, 'Only attribution is accepted.');
+        $context = VisitorContext::capture($request, $request->input('attribution', []));
+        $state = DB::transaction(function () use ($request, $context) {
             $version = $this->version();
             $visitor = $this->visitor($request);
             $id = (string) Str::uuid();
             $inserted = DB::table('funnel_runs')->insertOrIgnore([
-                'id' => $id, 'visitor_id' => $visitor, 'funnel_version_id' => $version->id,
-                'current_step' => Configuration::entry(json_decode($version->configuration, true)), 'is_synthetic' => app()->environment(['local', 'testing']), 'created_at' => now(), 'updated_at' => now(),
+                ...$context, 'id' => $id, 'visitor_id' => $visitor, 'funnel_version_id' => $version->id,
+                'current_step' => Configuration::entry(json_decode($version->configuration, true)), 'is_synthetic' => app()->environment(['local', 'testing']), 'created_at' => now()->format('Y-m-d H:i:s.uP'), 'updated_at' => now()->format('Y-m-d H:i:s.uP'),
             ]);
             if ($inserted) {
                 $this->event($id, 'funnel_started');
@@ -86,6 +88,46 @@ class FunnelController extends Controller
         });
 
         return response()->json($state);
+    }
+
+    public function exposure(Request $request)
+    {
+        abort_if(strlen($request->getContent()) > 4096, 413, 'Event is too large.');
+        abort_if(array_diff(array_keys($request->all()), ['event_id', 'name', 'run_id', 'step_id', 'properties']), 422, 'Unexpected event fields.');
+        $data = $request->validate([
+            'event_id' => ['required', 'uuid'],
+            'name' => ['required', 'in:landing_viewed,step_viewed,result_viewed,paywall_reached'],
+            'run_id' => ['nullable', 'uuid'], 'step_id' => ['nullable', 'string', 'max:40'],
+            'properties' => ['sometimes', 'array:surface'],
+            'properties.surface' => ['sometimes', 'in:page'],
+        ]);
+        $context = VisitorContext::capture($request);
+        $step = $data['step_id'] ?? '';
+        $runId = $data['run_id'] ?? null;
+        if ($data['name'] === 'landing_viewed') {
+            abort_if($runId || $step !== '', 422, 'Landing views cannot reference a run or step.');
+            $context['funnel_version_id'] = $request->session()->get('landing_version');
+            abort_unless($context['funnel_version_id'], 409, 'Initialize the page first.');
+            $key = 'landing:'.$context['visitor_id'].':'.$context['experiment_id'];
+        } else {
+            abort_unless($runId && $step, 422, 'A run and screen are required.');
+            $run = $this->owned($request, $runId);
+            $configuration = json_decode($this->version($run->funnel_version_id)->configuration, true);
+            $screen = Configuration::screen($configuration, $step);
+            if (Configuration::legacy($configuration) && $step === 'result') { $screen = ['type' => 'result']; }
+            $answers = json_decode($run->answers, true);
+            abort_unless($screen && ($run->current_step === $step || array_key_exists($step, $answers)), 409, 'This screen is not available yet.');
+            $expected = match ($screen['type']) { 'result' => 'result_viewed', 'boundary' => 'paywall_reached', default => 'step_viewed' };
+            abort_unless($data['name'] === $expected, 422, 'Event does not match the screen.');
+            $context = VisitorContext::run($run);
+            $key = 'view:'.$runId.':'.$step;
+        }
+        DB::table('events')->insertOrIgnore(array_merge($context, [
+            'run_id' => $runId, 'name' => $data['name'], 'step_id' => $step,
+            'client_event_id' => $data['event_id'], 'semantic_key' => $key,
+            'properties' => json_encode((object) ($data['properties'] ?? [])), 'created_at' => now()->format('Y-m-d H:i:s.uP'),
+        ]));
+        return response()->json(['accepted' => true]);
     }
 
     public function show(Request $request, string $run)
@@ -131,7 +173,7 @@ class FunnelController extends Controller
             }
             DB::table('funnel_runs')->where('id', $run)->update([
                 'answers' => json_encode($answers), 'result' => $result ? json_encode($result) : null, 'current_step' => $next,
-                'completed_at' => ($next === 'done' || Configuration::legacy($configuration)) ? now() : null, 'updated_at' => now(),
+                'completed_at' => ($next === 'done' || Configuration::legacy($configuration)) ? now()->format('Y-m-d H:i:s.uP') : null, 'updated_at' => now()->format('Y-m-d H:i:s.uP'),
             ]);
             $this->event($run, 'step_completed', $step);
             if ($quizCompleted) { $this->event($run, 'quiz_completed'); }
