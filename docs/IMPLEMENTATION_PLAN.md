@@ -5,16 +5,17 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 ## Current state
 
 - Approved reduced scope and final UX/analytics clarifications are documented.
-- Local repository and initial structure exist.
-- No application, dependencies, local services, or deployment exist yet.
+- Local repository and initial structure are committed; the private remote is https://github.com/voprosovnety/brainsprint.
+- T1 has been dispatched to independent chat `01a1536f-fe7a-7b93-8138-ff3c9bdfe00a` on the local host. Its implementation and verification have not been accepted yet.
+- No deployment exists.
 - No paid service activation or public publication is authorized.
 
 ## MVP
 
 | ID | Task | Depends on | Status | Completion criteria |
 | --- | --- | --- | --- | --- |
-| T0 | Repository foundation and task organization | Approval | In progress | Initial commit, private remote, documents/contracts, first independent executor dispatched |
-| T1 | First working vertical slice | T0 | Ready | Real landing → Memory → Laravel → PostgreSQL → stable demo result; refresh restoration; mobile/desktop browser checks and focused backend verification; reproducible setup and minimal CI |
+| T0 | Repository foundation and task organization | Approval | Complete | Initial commit, private remote, documents/contracts, first independent executor dispatched |
+| T1 | First working vertical slice | T0 | Dispatched | Real landing → Memory → Laravel → PostgreSQL → stable demo result; refresh restoration; mobile/desktop browser checks and focused backend verification; reproducible setup and minimal CI |
 | T2 | Complete configurable funnel | T1 | Planned | Three interactive mechanics, one conditional tutorial branch, pinned versions, navigation, save/error states, polished result and boundary; browser checks during development |
 | T3 | Events, UTM, and landing A/B test | T2 contracts | Planned | Stable pre-render assignment, actual exposures, deduplicated server/client events, correct attribution and conversion denominators; shared aggregate service |
 | T4 | Filament and compact public demo analytics | T3 | Planned | Protected admin reads, useful real metrics, synthetic-only public aggregates using T3 service; no public administrative credentials |
@@ -41,4 +42,4 @@ Optional only after a finished MVP: PostHog integration if it materially improve
 
 ## Immediate next action
 
-Dispatch T1 using `tasks/T1_VERTICAL_SLICE.md`. After T1 acceptance, prepare and dispatch T2; do not wait for the Product Owner to invent the next task.
+Retrieve T1 progress and completion from its independent chat, assess acceptance criteria, and integrate. After T1 acceptance, prepare and dispatch T2; do not wait for the Product Owner to invent the next task.
