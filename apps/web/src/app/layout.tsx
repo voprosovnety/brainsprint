@@ -3,7 +3,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BrainSprint — A little space for your mind",
   description:
-    "A playful visual memory challenge. One quiet minute, one curious mind. An entertainment demo, not a cognitive assessment.",
+    "A playful detour through memory, patterns and logic. A little space for a curious mind. An entertainment demo, not a cognitive assessment.",
 };
 export default function RootLayout({
   children,

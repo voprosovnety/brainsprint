@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -15,7 +14,8 @@ class MemoryRoundTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $source = file_get_contents(resource_path('funnel/memory-v1.json'));
+        DB::table('funnel_versions')->insert(['id' => 'historical-memory', 'configuration' => $source, 'published_at' => now()]);
         $this->withSession(['visitor_id' => 'owner']);
     }
 

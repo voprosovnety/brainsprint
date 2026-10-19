@@ -1,6 +1,6 @@
 # T2 — complete the one configurable BrainSprint funnel
 
-Status: ready for an independent executor.
+Delivery notes below record the implementation and verification. Coordinating status remains in `docs/IMPLEMENTATION_PLAN.md`.
 
 ## Goal and inputs
 
@@ -51,3 +51,33 @@ No payments, subscriptions, Reaction Speed, scoring engine, recovery codes, cons
 ## Completion report
 
 Return briefly in Russian: commit SHA, working flow, real checks and browser sizes, any limitations, changed areas, running local URLs, and recommended T3 handoff. The Product Owner authorized coordinated task reporting; send a concise completion message to coordinator chat `01a14708-527c-7253-9ebf-453f1e5cdf3f` when available, then leave the same result as your final response. Do not edit the coordinating plan or publish/deploy.
+
+
+## Delivery notes — 2026-10-19
+
+### Implemented behavior
+
+- Published `brainsprint-v2.json` as a new content-addressed version without migrations or resetting development data. Stable IDs, content, enabled screens, 3×3/4×4 grids, reveal duration, visual sequences/options, reasoning cards/clues, two bounded variants and explicit transitions drive the experience.
+- Publication validates list/primitive types and type-specific parameters, target existence, all edges for cycles (including disabled screens), reachability, complete category coverage, result → boundary → done, and a single incorrect tutorial branch whose explanation rejoins. Disabled extra rounds follow their default next. Challenge numbering follows transitions rather than JSON array order.
+- Added onboarding, Memory practice and guided explanation, two tasks for each of Memory / Pattern / Logic, persisted result, a cohesive final boundary and saved terminal completion. Logic supports pointer dragging, two-tap swaps, keyboard arrows and explicit move controls; four-card mobile move targets are 71×44 CSS pixels at 390×844.
+- Split screen-answer validation and configuration/transition handling from the controller, and interactive mechanics from the page. Answers/events/transitions remain in one locked PostgreSQL transaction. Identical repeats return canonical state; conflicting responses and skipped steps are rejected. Entering result emits `quiz_completed`; Finish demo emits `demo_completed`; neither implies an exposure event.
+- Retained the four consumer routes, same-origin proxy, Laravel session/CSRF, no-store responses, ownership and session rate limits. Updated TypeScript, OpenAPI, CI, HTTP check, README and API instructions. No new dependencies, services, migrations, payment behavior or deployment.
+- Historical T1 configurations remain immutable and retain Memory → result behavior. An adapter presents their missing newer display fields without altering stored configurations. The two runs present before implementation retained the exact combined answer/result digest `70ca259aaaa0c4fb732e53a2bf9a6af8`; their completion timestamps were not rewritten. A historical saved result was restored in the browser before and after frontend changes.
+
+### Actual verification
+
+- Final focused PostgreSQL run: **11 tests passed, 229 assertions**, using only the guarded `brainsprint_test` database. Includes both tutorial outcomes, full progression/terminal completion, stable result, idempotent retries, conflicting and malformed responses (including associative Logic objects), owner isolation, forbidden skips, invalid publication, disabled/reordered/reparameterized screens, pinned versions, historical compatibility and rollback on milestone failure.
+- Real HTTP check passed through the running Next.js proxy: full funnel, actual session/XSRF cookies, CSRF and foreign-origin rejection, overlapping duplicate starts and completions, restoration, wrong-owner rejection, stable snapshot/finish and independent session rate limits. Laravel's development server serializes requests; this is not a parallel load test.
+- Final `npm run build --prefix apps/web` and `npm run typecheck --prefix apps/web` passed. Git diff whitespace check passed. No new dependencies or lockfile changes.
+- Real browser inspection during implementation covered landing, onboarding, tutorial, explanation, Memory, Pattern, Logic, result and boundary at **390×844** and **1440×1000**. Both tutorial branches were exercised in separate browsers. Keyboard Space/Enter selection, visible focus, two-click card exchange, keyboard/card move controls and pointer drag were exercised. Browser checks found and fixed repeated guide copy, unreliable initial drag handling and undersized four-card move controls.
+- Confirmed unfinished reveal restart after refresh; saved-step Back → refresh → Forward; direct-URL skip restoration; result stability after reload and boundary completion; terminal completion restoration. Temporarily suspended only the known local API process to exercise saving/error/identical retry, then resumed it successfully. Confirmed steps survived that outage.
+- DOM measurements found no horizontal overflow across the principal screen templates at 390 CSS pixels and at 1440 CSS pixels. Reduced-motion CSS remains in place and was inspected; OS-level preference emulation and physical touch-device testing were not performed. Screenshots were inspected without retaining evidence files.
+- Independent read-only review found two P2 issues (configuration-order progress numbering and associative Logic input). Both were fixed, regression coverage was added for invalid inputs, and the reviewer confirmed both fixes. No other substantive transition/ownership findings were reported.
+
+### Limits and T3 handoff
+
+One run per anonymous browser session is intentional; no new attempt, recovery account, scoring engine or payment flow exists. Timing is relaxed and self-paced, not enforced. Hosted GitHub Actions has not been observed; no public/production environment was tested. A Chrome extension injected extra HTML attributes during one inspection and caused a development hydration warning; the independent in-app browser flow completed normally.
+
+T3 should add landing assignment/exposure, first-touch UTM, the validated client event endpoint and shared aggregates. Keep server milestones `funnel_started`, `step_completed`, `quiz_completed`, `demo_completed` distinct from actual `step_viewed`, `result_viewed`, `paywall_reached` exposures. For v2 `completed_at` means terminal demo completion; use `quiz_completed` events for quiz completion, including historical T1 runs. Preserve immutable version pinning and synthetic exclusion. Filament/public synthetic analytics remain T4.
+
+Local services remain web `http://127.0.0.1:3000` (also `http://localhost:3000`), API `http://127.0.0.1:8008`, PostgreSQL loopback `55432`. Existing browser sessions keep their pinned T1/T2 run; use a separate profile for a fresh new-version review. The coordinator-owned implementation plan was not edited.

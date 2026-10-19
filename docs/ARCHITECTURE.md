@@ -62,4 +62,4 @@ Target one repository with reproducible local services and CI. Prefer Vercel Hob
 
 ## Implementation and review
 
-Start with a real vertical slice, not complete infrastructure. Inspect each significant screen in a browser on mobile and desktop as it is built. Check persistence and API behavior against PostgreSQL. Later tasks add progression, mechanics, analytics, experiment, and Filament. Share API contracts before parallel work. Independent review is required for complex ownership, transition, or analytics changes.
+Start with a real vertical slice, not complete infrastructure. Inspect each significant screen in a browser on mobile and desktop as it is built. Check persistence and API behavior against PostgreSQL. Deliver progression and mechanics before analytics, experiment, and Filament. Share API contracts before parallel work. Independent review is required for complex ownership, transition, or analytics changes.

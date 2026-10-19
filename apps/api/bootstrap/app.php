@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             $codes = [404 => 'not_found', 409 => 'state_conflict', 419 => 'csrf_expired', 422 => 'invalid_answer', 429 => 'rate_limited', 503 => 'unavailable'];
             $message = match ($status) {
                 419 => 'Your session needs refreshing. Reload this page and try again.',
-                422 => 'Choose valid cells and try again.',
+                422 => 'Check your answer and try again.',
                 429 => 'Too many requests. Wait a minute and try again.',
                 500 => 'Your progress could not be saved. Please try again shortly.',
                 default => $e->getMessage(),

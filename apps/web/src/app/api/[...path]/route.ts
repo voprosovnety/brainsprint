@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 const run = "[0-9a-f-]{36}";
 const routes = {
   GET: new RegExp(`^v1/(bootstrap|runs/${run})$`),
-  POST: new RegExp(`^v1/runs(/${run}/steps/[a-z0-9-]+/complete)?$`),
+  POST: new RegExp(`^v1/runs(/${run}/steps/[a-z][a-z0-9_-]{0,39}/complete)?$`),
 };
 async function proxy(
   request: NextRequest,

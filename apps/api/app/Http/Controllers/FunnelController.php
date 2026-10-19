@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
+use App\Funnel\Answer;
+use App\Funnel\Configuration;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class FunnelController extends Controller
@@ -36,6 +37,8 @@ class FunnelController extends Controller
             'configuration' => json_decode($this->version($run->funnel_version_id)->configuration, true),
             'current_step' => $run->current_step,
             'completed_steps' => array_keys(json_decode($run->answers, true)),
+            'answers' => (object) json_decode($run->answers, true),
+            'demo_completed' => $run->current_step === 'done',
             'result' => $run->result ? json_decode($run->result, true) : null,
         ];
     }
@@ -72,7 +75,7 @@ class FunnelController extends Controller
             $id = (string) Str::uuid();
             $inserted = DB::table('funnel_runs')->insertOrIgnore([
                 'id' => $id, 'visitor_id' => $visitor, 'funnel_version_id' => $version->id,
-                'current_step' => 'memory', 'is_synthetic' => app()->environment(['local', 'testing']), 'created_at' => now(), 'updated_at' => now(),
+                'current_step' => Configuration::entry(json_decode($version->configuration, true)), 'is_synthetic' => app()->environment(['local', 'testing']), 'created_at' => now(), 'updated_at' => now(),
             ]);
             if ($inserted) {
                 $this->event($id, 'funnel_started');
@@ -95,25 +98,15 @@ class FunnelController extends Controller
         $state = DB::transaction(function () use ($request, $run, $step) {
             $record = $this->owned($request, $run, true);
             $configuration = json_decode($this->version($record->funnel_version_id)->configuration, true);
-            $screen = collect($configuration['steps'])->firstWhere('id', $step);
-            if (! $screen) {
-                throw new HttpException(409, 'This step is not part of your round. Reload to restore your progress.');
+            $screen = Configuration::screen($configuration, $step);
+            if (! $screen || (! Configuration::legacy($configuration) && ! $screen['enabled'])) {
+                throw new HttpException(409, 'This step is not part of your run. Reload to restore your progress.');
             }
-            $data = $request->validate([
-                'answer' => ['required', 'array:cells'],
-                'answer.cells' => ['present', 'array', 'max:'.($screen['grid_size'] ** 2)],
-                'answer.cells.*' => ['required', 'integer', function ($attribute, $value, $fail) {
-                    if (! is_int($value)) {
-                        $fail('Each cell must be an integer.');
-                    }
-                }, 'distinct:strict', Rule::in(range(0, $screen['grid_size'] ** 2 - 1))],
-            ]);
-            $cells = array_map('intval', $data['answer']['cells']);
-            sort($cells);
+            $answer = Answer::validate($request, $screen);
             $answers = json_decode($record->answers, true);
             if (array_key_exists($step, $answers)) {
-                if ($answers[$step]['cells'] !== $cells) {
-                    throw new HttpException(409, 'This round is already saved. Reload to see your result.');
+                if ($answers[$step] !== $answer) {
+                    throw new HttpException(409, 'This answer is already saved. Reload to restore your progress.');
                 }
 
                 return $this->state($record);
@@ -121,22 +114,28 @@ class FunnelController extends Controller
             if ($record->current_step !== $step) {
                 throw new HttpException(409, 'Complete the current step first. Reload to restore your progress.');
             }
-            $answers[$step] = ['cells' => $cells];
-            $result = [
-                'kind' => 'illustrative_demo',
-                'disclaimer' => $configuration['result']['disclaimer'],
-                'indicators' => [
-                    ['label' => 'Visual memory', 'value' => random_int(60, 95)],
-                    ['label' => 'Pattern recognition', 'value' => random_int(60, 95)],
-                    ['label' => 'Logical reasoning', 'value' => random_int(60, 95)],
-                ],
-            ];
+            $answers[$step] = $answer;
+            $next = Configuration::next($configuration, $screen, $answer);
+            $quizCompleted = Configuration::legacy($configuration) || (Configuration::screen($configuration, $next)['type'] ?? null) === 'result';
+            $result = $record->result ? json_decode($record->result, true) : null;
+            if ($quizCompleted && ! $result) {
+                $result = [
+                    'kind' => 'illustrative_demo',
+                    'disclaimer' => $configuration['result']['disclaimer'],
+                    'indicators' => [
+                        ['label' => 'Visual memory', 'value' => random_int(60, 95)],
+                        ['label' => 'Pattern recognition', 'value' => random_int(60, 95)],
+                        ['label' => 'Logical reasoning', 'value' => random_int(60, 95)],
+                    ],
+                ];
+            }
             DB::table('funnel_runs')->where('id', $run)->update([
-                'answers' => json_encode($answers), 'result' => json_encode($result), 'current_step' => 'result',
-                'completed_at' => now(), 'updated_at' => now(),
+                'answers' => json_encode($answers), 'result' => $result ? json_encode($result) : null, 'current_step' => $next,
+                'completed_at' => ($next === 'done' || Configuration::legacy($configuration)) ? now() : null, 'updated_at' => now(),
             ]);
             $this->event($run, 'step_completed', $step);
-            $this->event($run, 'quiz_completed');
+            if ($quizCompleted) { $this->event($run, 'quiz_completed'); }
+            if ($next === 'done') { $this->event($run, 'demo_completed'); }
 
             return $this->state(DB::table('funnel_runs')->find($run));
         });

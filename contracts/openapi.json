@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "BrainSprint T1 consumer API",
-    "version": "1.0.0",
-    "description": "Same-origin, database-backed anonymous Laravel session. GET bootstrap initializes cookies. All responses are private/no-store. Values are illustrative and unrelated to answer correctness. A session retains one run including its completed result in T1."
+    "title": "BrainSprint consumer API",
+    "version": "2.0.0",
+    "description": "Same-origin database-backed anonymous Laravel session; private/no-store. One pinned run per session. Configured progression with tutorial branch, six challenges, persisted illustrative snapshot and terminal demo completion. Historical Memory-only versions remain supported."
   },
   "servers": [
     {
@@ -323,7 +323,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "const": "memory"
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]{0,39}$"
             }
           },
           {
@@ -437,7 +438,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Validate a response against the pinned screen, save the answer and milestones atomically, and advance by server transition rules. Same canonical response is idempotent, even on an old completed screen; a different response returns 409. Wrong owner returns 404. Entering result emits quiz_completed once; acknowledging boundary emits demo_completed once. Exposures are not emitted here."
       }
     }
   },
@@ -447,16 +449,39 @@
         "type": "object",
         "properties": {
           "id": {
-            "const": "memory"
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,39}$"
           },
           "type": {
-            "const": "visual_memory"
+            "enum": [
+              "visual_memory",
+              "explanation"
+            ]
           },
           "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "variant": {
+            "enum": [
+              "standard",
+              "spotlight"
+            ]
+          },
+          "next": {
             "type": "string"
           },
           "grid_size": {
-            "const": 4
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 4
           },
           "pattern": {
             "type": "array",
@@ -465,18 +490,24 @@
               "minimum": 0,
               "maximum": 15
             },
+            "minItems": 1,
+            "maxItems": 16,
             "uniqueItems": true
           },
           "reveal_seconds": {
             "type": "integer",
-            "minimum": 1,
-            "maximum": 30
+            "minimum": 2,
+            "maximum": 15
           }
         },
         "required": [
           "id",
           "type",
           "title",
+          "description",
+          "enabled",
+          "variant",
+          "next",
           "grid_size",
           "pattern",
           "reveal_seconds"
@@ -484,63 +515,14 @@
         "additionalProperties": false
       },
       "Configuration": {
-        "type": "object",
-        "properties": {
-          "landing": {
-            "type": "object",
-            "properties": {
-              "eyebrow": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              },
-              "cta": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "eyebrow",
-              "title",
-              "description",
-              "cta"
-            ],
-            "additionalProperties": false
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FunnelConfiguration"
           },
-          "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MemoryStep"
-            },
-            "minItems": 1,
-            "maxItems": 1
-          },
-          "result": {
-            "type": "object",
-            "properties": {
-              "title": {
-                "type": "string"
-              },
-              "disclaimer": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "title",
-              "disclaimer"
-            ],
-            "additionalProperties": false
+          {
+            "$ref": "#/components/schemas/LegacyConfiguration"
           }
-        },
-        "required": [
-          "landing",
-          "steps",
-          "result"
-        ],
-        "additionalProperties": false
+        ]
       },
       "Result": {
         "type": "object",
@@ -596,17 +578,17 @@
             "$ref": "#/components/schemas/Configuration"
           },
           "current_step": {
-            "enum": [
-              "memory",
-              "result"
-            ]
+            "type": "string",
+            "description": "Canonical screen ID or done. Historical T1 result is terminal without a boundary."
           },
           "completed_steps": {
             "type": "array",
             "items": {
-              "const": "memory"
+              "type": "string"
             },
-            "maxItems": 1
+            "minItems": 0,
+            "maxItems": 24,
+            "uniqueItems": true
           },
           "result": {
             "oneOf": [
@@ -617,6 +599,17 @@
                 "type": "null"
               }
             ]
+          },
+          "answers": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "description": "Owner-only canonical saved responses, keyed by completed screen ID."
+          },
+          "demo_completed": {
+            "type": "boolean",
+            "description": "True only after a v2 boundary acknowledgement. Historical T1 result remains a completed memory preview."
           }
         },
         "required": [
@@ -625,7 +618,9 @@
           "configuration",
           "current_step",
           "completed_steps",
-          "result"
+          "result",
+          "answers",
+          "demo_completed"
         ],
         "additionalProperties": false
       },
@@ -660,23 +655,7 @@
         "type": "object",
         "properties": {
           "answer": {
-            "type": "object",
-            "properties": {
-              "cells": {
-                "type": "array",
-                "items": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "maximum": 15
-                },
-                "maxItems": 16,
-                "uniqueItems": true
-              }
-            },
-            "required": [
-              "cells"
-            ],
-            "additionalProperties": false
+            "$ref": "#/components/schemas/Answer"
           }
         },
         "required": [
@@ -717,6 +696,553 @@
           "error"
         ],
         "additionalProperties": false
+      },
+      "LegacyMemoryStep": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "memory"
+          },
+          "type": {
+            "const": "visual_memory"
+          },
+          "title": {
+            "type": "string"
+          },
+          "grid_size": {
+            "const": 4
+          },
+          "pattern": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "uniqueItems": true
+          },
+          "reveal_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "grid_size",
+          "pattern",
+          "reveal_seconds"
+        ],
+        "additionalProperties": false
+      },
+      "LegacyConfiguration": {
+        "type": "object",
+        "properties": {
+          "landing": {
+            "type": "object",
+            "properties": {
+              "eyebrow": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "cta": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "eyebrow",
+              "title",
+              "description",
+              "cta"
+            ],
+            "additionalProperties": false
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LegacyMemoryStep"
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "result": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "disclaimer": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "disclaimer"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "landing",
+          "steps",
+          "result"
+        ],
+        "additionalProperties": false
+      },
+      "TutorialStep": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,39}$"
+          },
+          "type": {
+            "enum": [
+              "tutorial"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "variant": {
+            "enum": [
+              "standard",
+              "spotlight"
+            ]
+          },
+          "next": {
+            "type": "string"
+          },
+          "grid_size": {
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 4
+          },
+          "pattern": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "reveal_seconds": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 15
+          },
+          "branch": {
+            "type": "object",
+            "properties": {
+              "incorrect": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "incorrect"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "description",
+          "enabled",
+          "variant",
+          "next",
+          "grid_size",
+          "pattern",
+          "reveal_seconds",
+          "branch"
+        ],
+        "additionalProperties": false
+      },
+      "Tile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "symbol": {
+            "type": "string",
+            "maxLength": 12
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 60
+          }
+        },
+        "required": [
+          "id",
+          "symbol",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "PatternStep": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,39}$"
+          },
+          "type": {
+            "enum": [
+              "pattern"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "variant": {
+            "enum": [
+              "standard",
+              "spotlight"
+            ]
+          },
+          "next": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 12
+            },
+            "minItems": 3,
+            "maxItems": 6
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tile"
+            },
+            "minItems": 2,
+            "maxItems": 4
+          },
+          "correct_choice": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "description",
+          "enabled",
+          "variant",
+          "next",
+          "sequence",
+          "options",
+          "correct_choice"
+        ],
+        "additionalProperties": false
+      },
+      "LogicStep": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,39}$"
+          },
+          "type": {
+            "enum": [
+              "logic"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "variant": {
+            "enum": [
+              "standard",
+              "spotlight"
+            ]
+          },
+          "next": {
+            "type": "string"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tile"
+            },
+            "minItems": 3,
+            "maxItems": 5
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 180
+            },
+            "minItems": 1,
+            "maxItems": 4
+          },
+          "correct_order": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 3,
+            "maxItems": 5,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "description",
+          "enabled",
+          "variant",
+          "next",
+          "cards",
+          "rules",
+          "correct_order"
+        ],
+        "additionalProperties": false
+      },
+      "ContentStep": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,39}$"
+          },
+          "type": {
+            "enum": [
+              "onboarding",
+              "result",
+              "boundary"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "variant": {
+            "enum": [
+              "standard",
+              "spotlight"
+            ]
+          },
+          "next": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "description",
+          "enabled",
+          "variant",
+          "next"
+        ],
+        "additionalProperties": false
+      },
+      "Screen": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/MemoryStep"
+          },
+          {
+            "$ref": "#/components/schemas/TutorialStep"
+          },
+          {
+            "$ref": "#/components/schemas/PatternStep"
+          },
+          {
+            "$ref": "#/components/schemas/LogicStep"
+          },
+          {
+            "$ref": "#/components/schemas/ContentStep"
+          }
+        ]
+      },
+      "FunnelConfiguration": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 2
+          },
+          "entry": {
+            "type": "string"
+          },
+          "landing": {
+            "type": "object",
+            "properties": {
+              "eyebrow": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "cta": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "eyebrow",
+              "title",
+              "description",
+              "cta"
+            ],
+            "additionalProperties": false
+          },
+          "result": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "disclaimer": {
+                "const": "Illustrative demo values — not calculated from your answers."
+              }
+            },
+            "required": [
+              "title",
+              "disclaimer"
+            ],
+            "additionalProperties": false
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Screen"
+            },
+            "minItems": 6,
+            "maxItems": 24
+          }
+        },
+        "required": [
+          "schema_version",
+          "entry",
+          "landing",
+          "result",
+          "steps"
+        ],
+        "additionalProperties": false,
+        "description": "Published only after validating IDs, parameters, reachable enabled screens, targets, acyclicity and both complete paths. Disabled screens follow their default next. Tutorial incorrect branch must lead to a guided explanation and rejoin its default path. Result leads to boundary; only boundary leads to done. Runtime array order does not determine progression."
+      },
+      "Answer": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "cells": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 15
+                },
+                "minItems": 0,
+                "maxItems": 16,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "cells"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "choice": {
+                "type": "string",
+                "maxLength": 30
+              }
+            },
+            "required": [
+              "choice"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "order": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "minItems": 3,
+                "maxItems": 5,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "order"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "acknowledged": {
+                "const": true
+              }
+            },
+            "required": [
+              "acknowledged"
+            ],
+            "additionalProperties": false
+          }
+        ],
+        "description": "Server chooses the shape by pinned screen type: cells for tutorial/memory (bounded by grid_size), choice from pattern options, exact permutation of logic card IDs, acknowledged:true for content/result/boundary. Empty cells are accepted. No client next or branch assertion."
       }
     }
   }
