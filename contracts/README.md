@@ -37,7 +37,7 @@ Publication rejects missing targets, duplicate IDs, cycles (including disabled e
 
 Historical T1 configurations without `schema_version` retain their original `memory` → `result` behavior, content and stored result. Their `completed_at` retains its original quiz-completion meaning; v2 uses terminal demo completion. They do not acquire a boundary retroactively. Empty saved answers serialize as an object; no private visitor/session IDs are returned.
 
-Errors contain `error.code`, `error.message`, and `error.fields`. Progress is limited to 60 requests/minute per session; exposure has an independent 40/minute session budget, both with `Retry-After`. Deployment edge protection is a release concern. T4 owns Filament and the synthetic public view.
+Errors contain `error.code`, `error.message`, and `error.fields`. Progress is limited to 60 requests/minute per session; exposure has an independent 40/minute session budget, both with `Retry-After`. Deployment edge protection is a release concern. Filament remains on the API origin under `/admin` and is never allowlisted by the consumer proxy.
 
 ## Experiment, attribution and client exposure
 
@@ -45,4 +45,12 @@ Bootstrap returns `experiment: {id: "landing-curiosity-v1", variant: "A" | "B"}`
 
 Client events use `{event_id: UUID, name, run_id?, step_id?, properties?: {surface?: "page"}}`. Allowed names: `landing_viewed`, `step_viewed`, `result_viewed`, `paywall_reached`. Landing requires bootstrap and no run/screen; other events require an owned run and a current or completed screen with matching type. No future or skipped screen is eligible. Server milestone names and all context overrides are forbidden. Request body is capped at 4096 bytes. UUID retries and repeated semantic views are accepted as no-ops, so `{accepted:true}` does not indicate a new event.
 
-Exact authority, deduplication, first-touch rules, delivery limitations, cohorts, numerators/denominators and the reusable T4 aggregate API are defined once in [analytics definitions](../docs/ANALYTICS.md). There is no public aggregate endpoint in this task.
+Exact authority, deduplication, first-touch rules, delivery limitations, cohorts, numerators/denominators and the reusable T4 aggregate API are defined once in [analytics definitions](../docs/ANALYTICS.md). The public aggregate endpoint is documented below.
+
+## Public synthetic analytics
+
+`GET /api/v1/demo-analytics` returns `DemoAnalytics` from the shared `AggregateService`: `dataset`, `cohort`, `totals`, `stage_conversions`, `quiz_elapsed_seconds`, and `experiment` only. It hard-codes `Dataset::Synthetic`, the rolling seven-day `[now-7 days, now)` UTC cohort, `asOf=now`, and a 24-hour observation window. It returns neither raw run/visitor/session IDs, answers, UTM values nor administrative details. Empty denominators remain null; pending experiment exposures remain pending; no winner is declared.
+
+Every query parameter is rejected with 422 at both proxy and backend, including dataset, bounds, SQL and ID parameters. GET bodies cannot alter the caller. POST is unsupported. The consumer per-session rate budget applies; responses remain private/no-store. The proxy adds only this exact GET route and cannot forward `/admin` or Livewire routes.
+
+Administrative cookies are host-only `brainsprint_admin_session`, scoped to `/admin`, HttpOnly, SameSite Strict, with a separate `admin` guard and `admin_sessions` table. Livewire updates use `/admin/livewire/update`; default updates and unused upload/preview routes are blocked before consumer session initialization. These boundaries also apply on one hostname across different ports.

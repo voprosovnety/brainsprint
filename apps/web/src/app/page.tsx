@@ -180,6 +180,6 @@ export default function Home() {
         {run && view !== "landing" && !error && <nav className="progress-nav" aria-label="Demo navigation"><button className="text-button" disabled={busy} onClick={() => show("landing")}>Back to the beginning</button>{view !== run.current_step && <button className="text-button" disabled={busy} onClick={() => show(canonical(run))}>{run.demo_completed ? "Return to the finish" : `Continue: ${currentTitle || "my demo"}`}</button>}</nav>}
       </>}
     </main>
-    <footer className="site-footer"><span>A little play. A little perspective.</span><p>For entertainment only. Not a cognitive assessment.</p><span className="footer-word">BrainSprint © 2026</span></footer>
+    <footer className="site-footer"><span>A little play. A little perspective.</span><p>For entertainment only. Not a cognitive assessment.</p><a className="demo-analytics-link" href="/demo-analytics">Demo analytics ↗</a><span className="footer-word">BrainSprint © 2026</span></footer>
   </div>;
 }

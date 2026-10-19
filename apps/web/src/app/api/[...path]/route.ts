@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 const run = "[0-9a-f-]{36}";
 const routes = {
-  GET: new RegExp(`^v1/(bootstrap|runs/${run})$`),
+  GET: new RegExp(`^v1/(bootstrap|demo-analytics|runs/${run})$`),
   POST: new RegExp(`^v1/(events|runs(/${run}/steps/[a-z][a-z0-9_-]{0,39}/complete)?)$`),
 };
 function attributionQuery(params: URLSearchParams) {
@@ -25,6 +25,9 @@ async function proxy(
       { error: { code: "not_found", message: "This page is not available." } },
       { status: 404 },
     );
+  if (path === "v1/demo-analytics" && request.nextUrl.searchParams.size) {
+    return NextResponse.json({ error: { code: "invalid_query", message: "Demo analytics does not accept query parameters." } }, { status: 422, headers: { "Cache-Control": "private, no-store" } });
+  }
   if (
     method === "POST" &&
     request.headers.get("origin") &&

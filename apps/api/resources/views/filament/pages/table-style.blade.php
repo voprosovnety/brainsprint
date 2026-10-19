@@ -1,0 +1,3 @@
+<style>
+.bs-table {width:100%;min-width:760px;border-collapse:collapse;text-align:left;font-size:.875rem}.bs-table th,.bs-table td{padding:.8rem;border-bottom:1px solid #dce5f3;vertical-align:top;max-width:28rem;overflow-wrap:anywhere}.bs-table th{color:#52627b}.bs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:1rem}.bs-field{display:grid;gap:.4rem}.bs-field input,.bs-field select{border:1px solid #9aabc2;border-radius:.5rem;padding:.6rem;width:100%}[role="region"]:focus-visible{outline:3px solid #2458d3;outline-offset:3px}.bs-table a{color:#2458d3;text-decoration:underline}
+</style>

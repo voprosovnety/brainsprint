@@ -1,6 +1,6 @@
 # Analytics and experiment definitions
 
-This is the single metric definition reference for the Laravel `App\Analytics\AggregateService`. Future Filament and public demo callers must consume its output rather than calculate their own versions of these metrics.
+This is the single metric definition reference for the Laravel `App\Analytics\AggregateService`. Filament and public demo callers must consume its output rather than calculate their own versions of these metrics.
 
 ## Collection and trust
 
@@ -29,7 +29,7 @@ Cookies, CSRF, same-origin proxy validation, private/no-store responses and requ
 
 Only `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term` are accepted: strings up to 120 characters without control characters. Bootstrap captures the initial URL values before internal history rewrites; Start also supplies those same initial values for close delivery/start timing. First touch is initialized once, including an empty/direct visit; refresh and later campaign URLs do not overwrite it. New runs and events copy the server-held attribution. No raw URL, referrer, click ID or multichannel attribution is collected.
 
-Local/testing runs and exposures are synthetic by server environment; ordinary production traffic is real. A run's events always inherit its stored marker, including legacy runs. Clients cannot override it. T4's reusable synthetic seed belongs to T4.
+Local/testing runs and exposures are synthetic by server environment; ordinary production traffic is real. A run's events always inherit its stored marker, including legacy runs. Clients cannot override it. `analytics:seed-demo` appends recognizable synthetic daily scenarios; see README for dates, idempotency and refresh behavior.
 
 ## Shared service API
 
@@ -47,7 +47,7 @@ $metrics = app(AggregateService::class)->summarize(
 );
 ```
 
-The range is half-open `[from,to)` and at most 93 days; `to <= asOf`, with `asOf` defaulting to now. Observation is 1–168 hours, default 24. All inputs are instants: SQL bindings preserve their offsets and microseconds. T4 must constrain user-selected dates, authenticate real-data access and hard-code the synthetic enum for public callers. No consumer aggregate endpoint exists in T3. Output includes aggregates only, with no run IDs, visitors, cookies or answers. UTM group labels still contain supplied campaign strings; they are safe only within the chosen dataset/access policy and must be rendered as text.
+The range is half-open `[from,to)` and at most 93 days; `to <= asOf`, with `asOf` defaulting to now. Observation is 1–168 hours, default 24. All inputs are instants: SQL bindings preserve their offsets and microseconds. Filament constrains authenticated date ranges and observation windows. The public demo caller hard-codes the synthetic enum, rolling seven-day bounds and 24-hour observation, rejects all query parameters, and returns a compact allowlist of the shared result fields. Output includes aggregates only, with no run IDs, visitors, cookies or answers. UTM group labels still contain supplied campaign strings; they are safe only within the chosen dataset/access policy and must be rendered as text.
 
 This small demo service loads the selected cohort's rows into memory. It is not a warehouse or a high-volume reporting engine. There is no `all` dataset or client-controlled synthetic flag. A public controller must not forward arbitrary query parameters into the dataset selection.
 
@@ -70,3 +70,7 @@ A/B uses a separate **first-exposure cohort**, not the run-created cohort. The f
 For each variant, `exposed` includes all such unique visitors; `eligible_exposed` contains those whose full observation window ends by `asOf`; `pending_observation` is the rest. All three conversion denominators are `eligible_exposed`. A starter requires a same-visitor, same-experiment/variant run created **at or after exposure and no later than exposure + observationHours**, with `funnel_started` in that interval. Quiz and boundary numerators require that starter and the respective event no later than the same exposure-window endpoint. Endpoint timestamps are inclusive. Run creation and event timestamps retain microseconds so a returning visitor's preexisting run is not accidentally counted as a later start in the same second.
 
 A start after `to` can qualify if it is within that visitor's exposure window. Starts before exposure or after the observation window do not qualify. Quiz/boundary rates are exposed-visitor rates, not per-starter rates; their raw counts and denominators are returned. A late event after `asOf` cannot affect this snapshot. Pending visitors are shown rather than counted as failures. Output always reports `status: insufficient_data` and `winner: null`; T3 implements no significance or decision machinery and declares no winner.
+
+## Presentations
+
+Filament uses `AggregateService` for its validated UTC range and selected Real (default) or Synthetic dataset. It shows totals, adjacent conversions, step observation/noncompletion/pending, elapsed wall-clock time, UTM tuples and mature first-exposure A/B counts without declaring a winner. Administrative text is escaped, including supplied UTM. The public caller uses the same service with fixed inputs and returns only cohort/totals/stage conversions/elapsed/experiment fields. Its bar lengths merely represent returned stage totals relative to run count; neither frontend recomputes conversion denominators. Public samples include all synthetic activity in that window, not just seeded rows.

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DemoAnalyticsController;
 use App\Http\Controllers\FunnelController;
 use App\Http\Middleware\PrivateResponse;
 use Illuminate\Support\Facades\Route;
@@ -12,3 +13,5 @@ Route::prefix('api/v1')->middleware([PrivateResponse::class, 'throttle:consumer'
 });
 
 Route::post('api/v1/events', [FunnelController::class, 'exposure'])->middleware([PrivateResponse::class, 'throttle:analytics']);
+
+Route::get('api/v1/demo-analytics', DemoAnalyticsController::class)->middleware([PrivateResponse::class, 'throttle:consumer']);

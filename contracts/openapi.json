@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "BrainSprint consumer API",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Same-origin database-backed anonymous Laravel session; private/no-store. One pinned run per session. Configured progression with tutorial branch, six challenges, persisted illustrative snapshot and terminal demo completion. Historical Memory-only versions remain supported."
   },
   "servers": [
@@ -597,6 +597,62 @@
           },
           "429": {
             "description": "Analytics rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/demo-analytics": {
+      "get": {
+        "operationId": "demoAnalytics",
+        "summary": "Synthetic aggregate sample for the last seven days",
+        "description": "Hard-coded synthetic dataset, rolling [now-7 days,now) UTC cohort, asOf=now, 24-hour observation. All query parameters are rejected (422). No raw IDs, answers, attribution, admin details, or real data. Private/no-store even though aggregate-only. Uses the shared AggregateService and definitions in docs/ANALYTICS.md.",
+        "responses": {
+          "200": {
+            "description": "Aggregate-only illustrative sample; zero denominators have null rates",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "private, no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoAnalytics"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Query parameters are unsupported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Consumer rate budget exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service temporarily unavailable",
             "content": {
               "application/json": {
                 "schema": {
@@ -1515,6 +1571,368 @@
         ],
         "additionalProperties": false,
         "description": "Landing: omit run_id/step_id. Other names require an owned run and current or previously completed screen; name must match screen type. All context and timestamps come from the server."
+      },
+      "AggregateRate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "numerator",
+          "denominator",
+          "rate"
+        ],
+        "properties": {
+          "numerator": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "denominator": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rate": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "DemoVariant": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "exposed",
+          "eligible_exposed",
+          "pending_observation",
+          "start_conversion",
+          "quiz_conversion",
+          "boundary_conversion"
+        ],
+        "properties": {
+          "exposed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "eligible_exposed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pending_observation": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "start_conversion": {
+            "$ref": "#/components/schemas/AggregateRate"
+          },
+          "quiz_conversion": {
+            "$ref": "#/components/schemas/AggregateRate"
+          },
+          "boundary_conversion": {
+            "$ref": "#/components/schemas/AggregateRate"
+          }
+        }
+      },
+      "DemoAnalytics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dataset",
+          "cohort",
+          "totals",
+          "stage_conversions",
+          "quiz_elapsed_seconds",
+          "experiment"
+        ],
+        "properties": {
+          "dataset": {
+            "const": "synthetic"
+          },
+          "cohort": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to_exclusive",
+              "as_of",
+              "observation_hours"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to_exclusive": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "as_of": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "observation_hours": {
+                "const": 24
+              }
+            }
+          },
+          "totals": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "runs",
+              "funnel_started",
+              "quiz_completed",
+              "result_viewed",
+              "paywall_reached",
+              "demo_completed"
+            ],
+            "properties": {
+              "runs": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "funnel_started": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "quiz_completed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "result_viewed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "paywall_reached": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "demo_completed": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "stage_conversions": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "quiz_completed",
+              "result_viewed",
+              "paywall_reached",
+              "demo_completed"
+            ],
+            "properties": {
+              "quiz_completed": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "numerator",
+                  "denominator",
+                  "rate",
+                  "from"
+                ],
+                "properties": {
+                  "numerator": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "denominator": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "rate": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "from": {
+                    "type": "string",
+                    "enum": [
+                      "funnel_started",
+                      "quiz_completed",
+                      "result_viewed",
+                      "paywall_reached"
+                    ]
+                  }
+                }
+              },
+              "result_viewed": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "numerator",
+                  "denominator",
+                  "rate",
+                  "from"
+                ],
+                "properties": {
+                  "numerator": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "denominator": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "rate": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "from": {
+                    "type": "string",
+                    "enum": [
+                      "funnel_started",
+                      "quiz_completed",
+                      "result_viewed",
+                      "paywall_reached"
+                    ]
+                  }
+                }
+              },
+              "paywall_reached": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "numerator",
+                  "denominator",
+                  "rate",
+                  "from"
+                ],
+                "properties": {
+                  "numerator": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "denominator": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "rate": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "from": {
+                    "type": "string",
+                    "enum": [
+                      "funnel_started",
+                      "quiz_completed",
+                      "result_viewed",
+                      "paywall_reached"
+                    ]
+                  }
+                }
+              },
+              "demo_completed": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "numerator",
+                  "denominator",
+                  "rate",
+                  "from"
+                ],
+                "properties": {
+                  "numerator": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "denominator": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "rate": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "from": {
+                    "type": "string",
+                    "enum": [
+                      "funnel_started",
+                      "quiz_completed",
+                      "result_viewed",
+                      "paywall_reached"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "quiz_elapsed_seconds": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "count",
+              "mean"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "mean": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            }
+          },
+          "experiment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "status",
+              "winner",
+              "variants"
+            ],
+            "properties": {
+              "id": {
+                "const": "landing-curiosity-v1"
+              },
+              "status": {
+                "const": "insufficient_data"
+              },
+              "winner": {
+                "type": "null"
+              },
+              "variants": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "A",
+                  "B"
+                ],
+                "properties": {
+                  "A": {
+                    "$ref": "#/components/schemas/DemoVariant"
+                  },
+                  "B": {
+                    "$ref": "#/components/schemas/DemoVariant"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

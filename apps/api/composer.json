@@ -3,13 +3,11 @@
     "name": "brainsprint/api",
     "type": "project",
     "description": "BrainSprint anonymous challenge API",
-    "keywords": [
-        "laravel",
-        "framework"
-    ],
+    "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "filament/filament": "^5.0",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0"
     },
@@ -41,7 +39,8 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
