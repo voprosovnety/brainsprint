@@ -4,18 +4,13 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 
 ## Current state
 
-- Approved reduced scope and final UX/analytics clarifications are documented.
-- Local repository and initial structure are committed; the private remote is https://github.com/voprosovnety/brainsprint.
-- T1 is accepted at `ebacae1` after coordinator inspection of ownership, transactional persistence, retries, configuration pinning, test coverage, and the executor's actual verification record. Its independent chat is `01a1536f-fe7a-7b93-8138-ff3c9bdfe00a`.
-- T2 is accepted at `cf4e385` after coordinator inspection of server progression/answer validation and the executor's verification/review record. Its chat is `01a15380-b09f-7ab1-aec2-796ea08f30ad`.
-- Full local funnel: http://127.0.0.1:3000 (web), http://127.0.0.1:8008/up (API); PostgreSQL is loopback-only on port 55432. Startup/shutdown instructions are in README.
-- T2 verification: eleven PostgreSQL tests / 229 assertions, real-cookie HTTP checks, production build, TypeScript, mobile/desktop browser checks including both branches, history, result stability and outage/retry. Independent review findings were fixed. Physical touch and OS-level reduced-motion emulation remain release checks; unchanged successful checks were not repeated by the coordinator.
-- Hosted T1 CI run 39230710389 failed because PHPUnit referenced an empty untracked Unit directory. Coordinator reproduced the exact failure, removed the unused suite at `9b9aa61`, and confirmed all eleven tests are discovered without that directory. Corrected hosted run 39233834302 passed PostgreSQL tests and production build.
-- T3 is accepted locally at `8236371` after coordinator inspection of event trust, assignment, aggregate definitions, and the executor's verification/review record. Its chat is `01a15399-69c8-7f81-9508-c9e0873f6631`.
-- T3 verification: 21 PostgreSQL tests across the combined run and one corrected isolated rate-limit harness rerun, production build, TypeScript, both landing variants on mobile/desktop, actual event observations, full completion, outage resilience, and independent read-only review. Existing run data was preserved. Hosted run 39274872105 for `8236371` is in progress; success is not yet confirmed.
-- T4 is dispatched to independent local chat `01a154b2-9b80-7970-949c-7677fe049ecf`; see `tasks/T4_ADMIN_DEMO_ANALYTICS.md`.
-- No deployment exists.
-- No paid service activation or public publication is authorized.
+- The full local funnel, stable landing experiment, events, protected Filament, and compact shared-service synthetic analytics are implemented. Accepted commits are recorded below.
+- Private source: https://github.com/voprosovnety/brainsprint. Local web: http://127.0.0.1:3000; demo: /demo-analytics; admin: http://127.0.0.1:8008/admin; PostgreSQL loopback: 55432. Check service state and README startup instructions before use.
+- T4 is accepted locally at `785bcbb` after coordinator inspection of admin session/auth/policies, hard-coded public Synthetic scope, shared metrics, and delivery evidence. Executor chat: `01a154b2-9b80-7970-949c-7677fe049ecf`.
+- T4 evidence: 36 PostgreSQL tests / 545 assertions in its main run plus focused added regressions; build/typecheck, both HTTP checks, real browser at 1280×720 and 390×844, and independent security review. Existing consumer history remains preserved. Hosted T3 run 39274872105 passed; hosted T4 is pending.
+- Local admin credentials exist only in ignored `.local/admin-access.json` with mode 0600. Never copy their content into tracked documents or chat output.
+- T5 is ready: release lifecycle, packaging and final local integration checks. Physical touch remains unverified; effective reduced-motion preference should be checked with available browser tooling.
+- No public deployment exists. Paid service activation and public publication still require explicit approval after a concrete release-ready result.
 
 ## MVP
 
@@ -24,9 +19,9 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 | T0 | Repository foundation and task organization | Approval | Complete | Initial commit, private remote, documents/contracts, first independent executor dispatched |
 | T1 | First working vertical slice | T0 | Complete | Accepted local slice and verification at `ebacae1`; clean-checkout PHPUnit discovery fixed at `9b9aa61` |
 | T2 | Complete configurable funnel | T1 | Complete | Accepted full funnel at `cf4e385`; eleven PostgreSQL tests, HTTP/browser verification, independent review fixes; no development-data reset |
-| T3 | Events, UTM, and landing A/B test | T2 contracts | Complete | Accepted locally at `8236371`; shared service and definitions in `docs/ANALYTICS.md`; hosted T3 checks pending |
-| T4 | Filament and compact public demo analytics | T3 | Dispatched | Protected admin reads, useful real metrics, synthetic-only public aggregates using T3 service; no public administrative credentials |
-| T5 | Integration and MVP release preparation | T1–T4 | Planned | Relevant complete checks, independent review of complex changes, visual fixes, current docs, deploy configuration and cost controls; public launch only after approval |
+| T3 | Events, UTM, and landing A/B test | T2 contracts | Complete | Accepted at `8236371`; definitions in `docs/ANALYTICS.md`; hosted run 39274872105 passed |
+| T4 | Filament and compact public demo analytics | T3 | Complete | Accepted locally at `785bcbb`; protected read-only admin, shared aggregate service, synthetic-only preview and repeatable seed; hosted CI pending |
+| T5 | Integration and MVP release preparation | T1–T4 | Ready | Relevant complete checks, independent review of changed release/lifecycle code, visual fixes, current docs, deploy configuration and cost controls; public launch only after approval |
 
 T1 intentionally implements only one temporary slice of the single BrainSprint configuration, not an alternative funnel. T2 expands that configuration into the full experience.
 
@@ -49,4 +44,4 @@ Optional only after a finished MVP: PostHog integration if it materially improve
 
 ## Immediate next action
 
-Retrieve T4 progress/completion and assess authorization boundaries, shared metric usage, synthetic isolation, and browser results. Confirm hosted T3 checks. Preserve existing run data; do not publish or activate paid services. T5 follows after T4 acceptance.
+Dispatch T5 from `tasks/T5_RELEASE_PREPARATION.md`, confirm hosted T4 checks, and assess local release readiness. Publication and infrastructure provisioning remain a separate approval gate; do not mark the whole project publicly launched before they happen.
