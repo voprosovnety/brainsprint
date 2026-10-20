@@ -8,12 +8,14 @@ use Illuminate\Support\Facades\Validator;
 class VisitorContext
 {
     public const EXPERIMENT = 'landing-curiosity-v1';
+
     public const UTM = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
 
     public static function id(Request $request): string
     {
-        $id = $request->session()->get('visitor_id') ?? hash_hmac('sha256', $request->session()->getId(), config('app.key'));
+        $id = $request->session()->get('visitor_id') ?? bin2hex(random_bytes(32));
         $request->session()->put('visitor_id', $id);
+
         return $id;
     }
 
@@ -33,6 +35,7 @@ class VisitorContext
         if (! $request->session()->has('attribution')) {
             $request->session()->put('attribution', array_filter($attribution, fn ($v) => $v !== ''));
         }
+
         return [
             'visitor_id' => $visitor, 'experiment_id' => $experiment['id'], 'variant' => $experiment['variant'],
             'attribution' => json_encode((object) $request->session()->get('attribution')),

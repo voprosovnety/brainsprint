@@ -33,7 +33,7 @@ From the repository root:
 
 The script installs project-local Composer (verifying its installer checksum), locked PHP/npm dependencies, creates local environment files only when absent, generates a random database password and Laravel key without printing them, starts PostgreSQL, runs migrations, and publishes the current validated funnel configuration. No global tools or paid services are installed. Docker image initialization creates an isolated `brainsprint_test` database alongside `brainsprint`.
 
-`apps/api/.env.example` contains placeholders; `apps/web/.env.example` contains only the local API origin. Real `.env` files, tooling, dependencies, and database volumes are ignored. The API's normal database session lasts seven days of inactivity. Use the same hostname consistently: cookies for `127.0.0.1` and `localhost` are separate. Local cookies use HTTP; production must enable HTTPS and `SESSION_SECURE_COOKIE=true`.
+`apps/api/.env.example` contains placeholders; `apps/web/.env.example` contains only the local API origin. Real `.env` files, tooling, dependencies, and database volumes are ignored. The API's normal database session lasts seven days of inactivity. Use the same hostname consistently: cookies for `127.0.0.1` and `localhost` are separate. Local cookies use HTTP; production enforces secure host-only cookies and HTTPS URL generation; use the release settings below.
 
 ## Start and stop
 
@@ -70,7 +70,7 @@ Configuration source is `apps/api/resources/funnel/brainsprint-v2.json`. The see
 
 Historical T1 Memory-only runs continue their original Memory → result path. Their saved answers, result values and completion timestamps are preserved; they do not acquire later screens. `memory-v1.json` remains as a historical fixture. The two preexisting development runs were compared before and after T2 publication; their combined answer/result digest was unchanged.
 
-One run is retained per browser session even after completion. Starting again reopens its saved state. Clearing cookies starts a separate anonymous session and loses browser access to the previous run; no recovery or new-attempt feature exists. For local review of T2 while keeping an existing T1 session, use a separate browser profile or [localhost](http://localhost:3000); continue using that hostname consistently.
+One run is retained per browser session even after completion. Starting again reopens its saved state. The quiet **About this demo & your data** disclosure explains storage/telemetry and provides permanent deletion of this browser visitor’s run, snapshot and events, followed by a new anonymous session. Clearing cookies starts a separate anonymous session and loses browser access to the previous run; no recovery or new-attempt feature exists. For local review of T2 while keeping an existing T1 session, use a separate browser profile or [localhost](http://localhost:3000); continue using that hostname consistently.
 
 ## Administrative reads and demo analytics
 
@@ -81,7 +81,7 @@ cd apps/api
 php artisan admin:local reviewer@brainsprint.local
 ```
 
-The CLI generates a random password, stores only its hash in `admin_users`, and writes the access URL/email/password to the ignored project-local `.local/admin-access.json` with mode `0600`. It prints only the private file path. Use that file locally to sign in at [Admin](http://127.0.0.1:8008/admin). The email is an identifier, not a mail dependency. Repeating the command rotates the password and revokes that administrator's stored sessions and remember token. There are no default credentials, public registration or password-reset mail. Provisioning is refused outside local/testing; release provisioning is a T5 concern.
+The CLI generates a random password, stores only its hash in `admin_users`, and writes the access URL/email/password to the ignored project-local `.local/admin-access.json` with mode `0600`. It prints only the private file path. Use that file locally to sign in at [Admin](http://127.0.0.1:8008/admin). The email is an identifier, not a mail dependency. Repeating the command rotates the password and revokes that administrator's stored sessions and remember token. There are no default credentials, public registration or password-reset mail. Provisioning is refused outside local/testing; release provisioning uses the explicit secret-file command documented in [release operation](docs/DEPLOYMENT.md).
 
 The admin guard, host-only `/admin` cookie (`brainsprint_admin_session`, SameSite Strict, 2-hour session inactivity; optional remember-me stays in the same admin scope) and `admin_sessions` table are separate from anonymous progress. Admin Livewire uses `/admin/livewire/update`; default component mutations and unused file routes are closed. Consumer requests on port 3000 keep their original cookie and CSRF behavior even on the same hostname. Admin login/logout never becomes a consumer account. Use HTTPS and secure cookies for release; this setup uses ordinary per-request PHP, without Octane or persistent application workers.
 
@@ -104,7 +104,7 @@ Open [Demo analytics](http://127.0.0.1:3000/demo-analytics), also linked from th
 
 ```sh
 cd apps/api
-php artisan test --compact --filter='MemoryRoundTest|FunnelProgressionTest|AnalyticsExperimentTest|AnalyticsAggregateTest|AdminDemoAnalyticsTest'
+php artisan test --compact --filter='MemoryRoundTest|FunnelProgressionTest|AnalyticsExperimentTest|AnalyticsAggregateTest|AdminDemoAnalyticsTest|ReleaseLifecycleTest'
 ```
 
 Tests require the separate local PostgreSQL database `brainsprint_test`; a guard refuses other database names, remote hosts, and database URLs before migrations. They cover both tutorial paths, all mechanics, publication validation, reconfiguration, historical compatibility, ownership, forbidden transitions, malformed/conflicting answers, persisted results, terminal completion, duplicate milestones and transactional rollback. Analytics suites additionally cover assignment, actual exposures, first-touch UTM, client trust, semantic/UUID deduplication, CSRF, exact real/synthetic cohorts, legacy/branch denominators and timezone/microsecond boundaries. Test data rolls back.
@@ -123,6 +123,21 @@ The HTTP check completes the full funnel through Next.js with real cookies, CSRF
 
 Verification evidence is recorded in the [T2 delivery notes](docs/tasks/T2_COMPLETE_FUNNEL.md), [T3 delivery notes](docs/tasks/T3_ANALYTICS_EXPERIMENT.md#delivery-evidence), and [T4 delivery notes](docs/tasks/T4_ADMIN_DEMO_ANALYTICS.md#delivery-evidence). GitHub Actions runs the focused PostgreSQL suites, production build and typecheck. The corrected baseline CI run at `9b9aa61` was observed successful; no hosted CI run has been observed for the local T4 delivery.
 
+## Release package and data lifecycle
+
+[Release operation](docs/DEPLOYMENT.md) contains exact Vercel/Railway configuration, environment variables, migration/publication/seed/admin/maintenance commands, disposable production-image checks and backup/rollback/approval requirements. The production package uses Apache/PHP and private PostgreSQL networking; no cloud service is created. Vercel Hobby eligibility must be confirmed for personal noncommercial use. The $5–10/month light-usage target is variable, not a fixed commitment.
+
+```sh
+cd apps/api
+php artisan privacy:retention
+# Explicit deletion only after reviewing the preview and backup policy:
+php artisan privacy:retention --execute --limit=500
+# Release only; secret file prepared through a private operator channel:
+php artisan admin:release operator@example.com --password-file=/run/secrets/brainsprint-admin
+```
+
+Retention defaults to non-destructive preview. It selects visitors whose latest stored run creation/update/restore or associated event is more than 30 days old; landing-only exposures and synthetic samples follow the same policy. It separately removes expired consumer/admin sessions while preserving live sessions, administrators and immutable versions. The bounded execute path is tested only on isolated fixtures. Recurring maintenance and provider backup expiry/restore are **not configured**; the UI describes retention eligibility honestly. Consumer deletion only affects the session-owned visitor, including landing events, rotates the anonymous session and preserves admin/other visitors. A new visit can begin new collection.
+
 ## Structure and boundaries
 
 | Path | Responsibility |
@@ -133,6 +148,6 @@ Verification evidence is recorded in the [T2 delivery notes](docs/tasks/T2_COMPL
 | `infra/` | Local PostgreSQL, setup, and focused HTTP check |
 | `docs/` | Architecture, coordinating implementation plan, and task briefs |
 
-No payments, subscriptions, consumer accounts, scoring engine, Reaction Speed, training product, Redis, workers, queues, or PostHog. A/B assignment precedes rendering; client analytics delivery has bounded retries and a separate rate budget. Bootstrap alone does not claim exposure. Ordinary aggregates exclude synthetic data; local/testing collection is synthetic by server policy. The API rate limit is per server session; release work must add deployment-specific edge protection and retention/deletion policy. Public hosting and paid services require Product Owner approval.
+No payments, subscriptions, consumer accounts, scoring engine, Reaction Speed, training product, Redis, workers, queues, or PostHog. A/B assignment precedes rendering; client analytics delivery has bounded retries and a separate rate budget. Bootstrap alone does not claim exposure. Ordinary aggregates exclude synthetic data; local/testing collection is synthetic by server policy. Session and configurable global application rate budgets apply; production API calls require a server-only proxy secret. There is no configured edge DDoS service. The 30-day lifecycle, bounded preview/execute retention and deployment assumptions are documented in [release operation](docs/DEPLOYMENT.md). Public hosting and paid services require Product Owner approval.
 
 See [architecture](docs/ARCHITECTURE.md), [consumer contract](contracts/README.md), [T1 brief](docs/tasks/T1_VERTICAL_SLICE.md), and the coordinator-owned [implementation plan](docs/IMPLEMENTATION_PLAN.md).

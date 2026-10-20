@@ -41,7 +41,8 @@ a {
   text-decoration: none;
 }
 button:focus-visible,
-a:focus-visible {
+a:focus-visible,
+summary:focus-visible {
   outline: 3px solid #183eaa;
   outline-offset: 5px;
 }
@@ -1062,3 +1063,12 @@ h2[tabindex]:focus {
 @media (prefers-reduced-motion: reduce) { .discovery-preview > div { transform: none; } }
 
 .demo-analytics-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--blue); font-size: 12px; }
+
+.privacy-note { border-top: 1px solid var(--line, #d4e3ed); margin: 32px auto 0; max-width: 1200px; padding: 24px 0; color: var(--muted, #496478); }
+.privacy-note summary { cursor: pointer; font-size: .875rem; width: fit-content; padding: 10px 0; }
+.privacy-body { max-width: 720px; padding: 12px 0; font-size: .9rem; line-height: 1.7; }
+.privacy-body h2 { font-size: 1.4rem; margin-bottom: 16px; }
+.privacy-body p { margin-bottom: 16px; }
+.privacy-confirm { border-left: 3px solid var(--blue); padding: 12px 20px; }
+.privacy-confirm .button { font-size: .85rem; min-height: 48px; }
+.deletion-success { margin: 20px 0; padding: 16px; border: 1px solid #a7c6db; border-radius: 12px; }

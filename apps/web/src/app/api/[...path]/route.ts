@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 const run = "[0-9a-f-]{36}";
 const routes = {
   GET: new RegExp(`^v1/(bootstrap|demo-analytics|runs/${run})$`),
-  POST: new RegExp(`^v1/(events|runs(/${run}/steps/[a-z][a-z0-9_-]{0,39}/complete)?)$`),
+  POST: new RegExp(`^v1/(privacy/delete|events|runs(/${run}/steps/[a-z][a-z0-9_-]{0,39}/complete)?)$`),
 };
 function attributionQuery(params: URLSearchParams) {
   const bounded = new URLSearchParams();
@@ -25,14 +25,14 @@ async function proxy(
       { error: { code: "not_found", message: "This page is not available." } },
       { status: 404 },
     );
-  if (path === "v1/demo-analytics" && request.nextUrl.searchParams.size) {
-    return NextResponse.json({ error: { code: "invalid_query", message: "Demo analytics does not accept query parameters." } }, { status: 422, headers: { "Cache-Control": "private, no-store" } });
+  if (["v1/demo-analytics", "v1/privacy/delete"].includes(path) && request.nextUrl.searchParams.size) {
+    return NextResponse.json({ error: { code: "invalid_query", message: "This action does not accept query parameters." } }, { status: 422, headers: { "Cache-Control": "private, no-store" } });
   }
   if (
     method === "POST" &&
     request.headers.get("origin") &&
     request.headers.get("origin") !==
-      `${request.nextUrl.protocol}//${request.headers.get("host")}`
+      (process.env.WEB_ORIGIN || `${request.nextUrl.protocol}//${request.headers.get("host")}`)
   ) {
     return NextResponse.json(
       {
@@ -50,6 +50,7 @@ async function proxy(
     Accept: "application/json",
     "Content-Type": "application/json",
   });
+  if (process.env.CONSUMER_PROXY_SECRET) headers.set("X-Consumer-Proxy", process.env.CONSUMER_PROXY_SECRET);
   for (const name of ["cookie", "x-xsrf-token"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use App\Funnel\Answer;
 use App\Funnel\Configuration;
 use App\Funnel\VisitorContext;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class FunnelController extends Controller
@@ -62,6 +62,9 @@ class FunnelController extends Controller
         $version = $this->version();
         $request->session()->put('landing_version', $version->id);
         $run = DB::table('funnel_runs')->where('visitor_id', $this->visitor($request))->first();
+        if ($run) {
+            DB::table('funnel_runs')->where('id', $run->id)->update(['updated_at' => now()]);
+        }
 
         return response()->json(['experiment' => ['id' => $context['experiment_id'], 'variant' => $context['variant']], 'configuration_version' => $version->id, 'configuration' => json_decode($version->configuration, true), 'run' => $run ? $this->state($run) : null]);
     }
@@ -114,10 +117,14 @@ class FunnelController extends Controller
             $run = $this->owned($request, $runId);
             $configuration = json_decode($this->version($run->funnel_version_id)->configuration, true);
             $screen = Configuration::screen($configuration, $step);
-            if (Configuration::legacy($configuration) && $step === 'result') { $screen = ['type' => 'result']; }
+            if (Configuration::legacy($configuration) && $step === 'result') {
+                $screen = ['type' => 'result'];
+            }
             $answers = json_decode($run->answers, true);
             abort_unless($screen && ($run->current_step === $step || array_key_exists($step, $answers)), 409, 'This screen is not available yet.');
-            $expected = match ($screen['type']) { 'result' => 'result_viewed', 'boundary' => 'paywall_reached', default => 'step_viewed' };
+            $expected = match ($screen['type']) {
+                'result' => 'result_viewed', 'boundary' => 'paywall_reached', default => 'step_viewed'
+            };
             abort_unless($data['name'] === $expected, 422, 'Event does not match the screen.');
             $context = VisitorContext::run($run);
             $key = 'view:'.$runId.':'.$step;
@@ -127,12 +134,16 @@ class FunnelController extends Controller
             'client_event_id' => $data['event_id'], 'semantic_key' => $key,
             'properties' => json_encode((object) ($data['properties'] ?? [])), 'created_at' => now()->format('Y-m-d H:i:s.uP'),
         ]));
+
         return response()->json(['accepted' => true]);
     }
 
     public function show(Request $request, string $run)
     {
-        return response()->json($this->state($this->owned($request, $run)));
+        $owned = $this->owned($request, $run);
+        DB::table('funnel_runs')->where('id', $owned->id)->update(['updated_at' => now()]);
+
+        return response()->json($this->state($owned));
     }
 
     public function complete(Request $request, string $run, string $step)
@@ -176,8 +187,12 @@ class FunnelController extends Controller
                 'completed_at' => ($next === 'done' || Configuration::legacy($configuration)) ? now()->format('Y-m-d H:i:s.uP') : null, 'updated_at' => now()->format('Y-m-d H:i:s.uP'),
             ]);
             $this->event($run, 'step_completed', $step);
-            if ($quizCompleted) { $this->event($run, 'quiz_completed'); }
-            if ($next === 'done') { $this->event($run, 'demo_completed'); }
+            if ($quizCompleted) {
+                $this->event($run, 'quiz_completed');
+            }
+            if ($next === 'done') {
+                $this->event($run, 'demo_completed');
+            }
 
             return $this->state(DB::table('funnel_runs')->find($run));
         });

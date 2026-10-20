@@ -4,6 +4,8 @@ import { api, presentConfiguration, type Answer, type Bootstrap, type DisplayCon
 import { beforeStart, campaign, recordView } from "@/lib/analytics";
 import { Arrow, Grid, Logic, Memory, Pattern } from "@/components/challenges";
 
+import { Privacy } from "@/components/privacy";
+
 const categories = [
   { icon: "▦", title: "Remember", description: "Watch a pattern. Bring it back.", type: "visual_memory" },
   { icon: "◆", title: "Notice", description: "Find the rhythm. See what follows.", type: "pattern" },
@@ -48,6 +50,7 @@ export default function Home() {
   const [view, setView] = useState("landing");
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
+  const [deleted, setDeleted] = useState(false);
   const [restored, setRestored] = useState(false);
   const [pending, setPending] = useState<{ step: string; answer: Answer } | null>(null);
   const runRef = useRef<Run | null>(null);
@@ -77,6 +80,10 @@ export default function Home() {
     finally { setBusy(false); }
   }
   useEffect(() => {
+    try {
+      setDeleted(sessionStorage.getItem("brainsprint-data-deleted") === "1");
+      sessionStorage.removeItem("brainsprint-data-deleted");
+    } catch {}
     if (!initialized.current) { initialized.current = true; void load(true); }
     function pop() {
       const r = runRef.current;
@@ -154,6 +161,7 @@ export default function Home() {
   return <div className="site-shell">
     <header className="site-header"><a className="brand" href="/?screen=landing" aria-label="BrainSprint home" onClick={e => { e.preventDefault(); show("landing"); }}><span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>brain<span>sprint</span><span className="brand-dot">.</span></a><span className="header-note">A little space for your mind</span><span className="demo-tag">The demo edition</span></header>
     <main>
+      {deleted && <p className="deletion-success" role="status">Your saved data was deleted. This is a new anonymous visit.</p>}
       {!bootstrap ? <section className="loading-panel"><div className="tiny-pattern" aria-hidden="true">✦</div><h1 ref={heading} tabIndex={-1}>A moment to settle in.</h1>{busy ? <p role="status">Preparing your challenge…</p> : <><p role="alert">{error}</p><button className="button" onClick={() => load(true)}>Try again <Arrow /></button></>}</section> : <>
         {view === "landing" && config && landing && <>
           <section className={`hero landing-${bootstrap.experiment.variant.toLowerCase()}`}><div className="hero-copy"><p className="eyebrow"><span />{landing.eyebrow}</p><h1 ref={heading} tabIndex={-1}>{landing.title}</h1><p className="intro">{landing.description}</p><button className="button" disabled={busy} onClick={start}>{busy ? "Opening your challenge…" : run ? run.demo_completed ? "Revisit the demo" : result && legacy ? "View my saved result" : "Continue my demo" : landing.cta}<Arrow /></button><p className="cta-note">{legacy ? "A memory preview" : "About 3–4 minutes"}<span>·</span>No sign-up<span>·</span>Just curiosity</p></div>
@@ -180,6 +188,7 @@ export default function Home() {
         {run && view !== "landing" && !error && <nav className="progress-nav" aria-label="Demo navigation"><button className="text-button" disabled={busy} onClick={() => show("landing")}>Back to the beginning</button>{view !== run.current_step && <button className="text-button" disabled={busy} onClick={() => show(canonical(run))}>{run.demo_completed ? "Return to the finish" : `Continue: ${currentTitle || "my demo"}`}</button>}</nav>}
       </>}
     </main>
+    <Privacy locked={busy || !!pending} />
     <footer className="site-footer"><span>A little play. A little perspective.</span><p>For entertainment only. Not a cognitive assessment.</p><a className="demo-analytics-link" href="/demo-analytics">Demo analytics ↗</a><span className="footer-word">BrainSprint © 2026</span></footer>
   </div>;
 }

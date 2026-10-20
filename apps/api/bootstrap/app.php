@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ConsumerProxy;
 use App\Http\Middleware\SessionBoundary;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -11,9 +12,21 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(web: __DIR__.'/../routes/web.php', commands: __DIR__.'/../routes/console.php', health: '/up')
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->prepend(SessionBoundary::class);
+        $middleware->trustHosts(at: fn () => app()->environment('production')
+            ? ['^'.preg_quote(parse_url(config('app.url'), PHP_URL_HOST), '/').'$', '^healthcheck\.railway\.app$']
+            : ['^localhost$', '^127\.0\.0\.1$'], subdomains: false);
+        $middleware->prepend([ConsumerProxy::class, SessionBoundary::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->respond(function ($response, $exception, Request $request) {
+            if ($request->is('api/*', 'admin', 'admin/*')) {
+                $response->headers->set('Cache-Control', 'private, no-store');
+                $response->headers->set('X-Content-Type-Options', 'nosniff');
+                $response->headers->set('X-Frame-Options', 'DENY');
+            }
+
+            return $response;
+        });
         $exceptions->shouldRenderJsonWhen(fn (Request $r) => $r->is('api/*') || $r->expectsJson());
         $exceptions->render(function (Throwable $e, Request $request) {
             if (! $request->is('api/*')) {

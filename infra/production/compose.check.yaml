@@ -1,0 +1,48 @@
+# Disposable local release-package fixture. Never points at the development database.
+name: brainsprint-release-check
+services:
+  db:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: brainsprint_test
+      POSTGRES_USER: release_fixture
+      POSTGRES_PASSWORD: ${RELEASE_FIXTURE_DB_PASSWORD:?Generate the ignored fixture environment first}
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U release_fixture -d brainsprint_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  api:
+    image: brainsprint-api:t5
+    env_file: ../../.local/t5-container.env
+    environment:
+      DB_URL: ''
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: brainsprint_test
+      DB_USERNAME: release_fixture
+    ports:
+      - "127.0.0.1:8011:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+  browser_api:
+    image: brainsprint-api:t5
+    env_file: ../../.local/t5-container.env
+    environment:
+      APP_ENV: local
+      APP_URL: http://127.0.0.1:8012
+      SESSION_SECURE_COOKIE: 'false'
+      SESSION_COOKIE: brainsprint_release_fixture
+      DB_URL: ''
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: brainsprint_test
+      DB_USERNAME: release_fixture
+    ports:
+      - "127.0.0.1:8012:8080"
+    depends_on:
+      db:
+        condition: service_healthy

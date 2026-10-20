@@ -1,0 +1,17 @@
+**
+!apps/
+!apps/api/
+!apps/api/app/**
+!apps/api/bootstrap/**
+apps/api/bootstrap/cache/*
+!apps/api/bootstrap/cache/.gitignore
+!apps/api/config/**
+!apps/api/database/**
+!apps/api/public/**
+!apps/api/resources/**
+!apps/api/routes/**
+!apps/api/artisan
+!apps/api/composer.json
+!apps/api/composer.lock
+!infra/
+!infra/production/**

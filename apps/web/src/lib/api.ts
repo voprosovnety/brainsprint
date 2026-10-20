@@ -38,6 +38,7 @@ export type Run = {
   demo_completed: boolean;
   result: null | { kind: "illustrative_demo"; disclaimer: string; indicators: { label: string; value: number }[] };
 };
+export type Deletion = { deleted: true };
 export type Experiment = { id: string; variant: "A" | "B" };
 export type Bootstrap = { experiment: Experiment; configuration_version: string; configuration: Configuration; run: Run | null };
 export async function api<T>(path: string, data?: unknown, signal?: AbortSignal): Promise<T> {

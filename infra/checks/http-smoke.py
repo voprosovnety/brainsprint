@@ -3,11 +3,14 @@
 import concurrent.futures
 import http.cookiejar
 import json
+import os
 import urllib.error
 import urllib.parse
 import urllib.request
 
-BASE = 'http://127.0.0.1:3000'
+SESSION_COOKIE = os.environ.get('BRAINSPRINT_SESSION_COOKIE', 'brainsprint_session')
+BASE = os.environ.get('BRAINSPRINT_WEB_ORIGIN', 'http://127.0.0.1:3000')
+assert urllib.parse.urlparse(BASE).hostname in ('127.0.0.1', '127.0.0.2', 'localhost'), 'Local fixtures only'
 
 def browser():
     jar = http.cookiejar.CookieJar()
@@ -32,7 +35,7 @@ def call(client, path, data=None, csrf=True, origin=BASE):
 owner = browser()
 status, bootstrap, headers = call(owner, 'bootstrap')
 assert status == 200 and 'no-store' in headers['Cache-Control']
-assert any(c.name == 'brainsprint_session' and c.has_nonstandard_attr('httponly') for c in owner[0])
+assert any(c.name == SESSION_COOKIE and c.has_nonstandard_attr('httponly') for c in owner[0])
 assert call(owner, 'runs', {}, csrf=False)[0] == 419
 assert call(owner, 'runs', {}, origin='https://foreign.example')[0] == 403
 # Independent cookie jars share the same initialized anonymous session for concurrent retries.
@@ -86,4 +89,17 @@ for _ in range(60):
         break
 assert status == 429 and headers.get('Retry-After')
 assert call(stranger, 'bootstrap')[0] == 200
-print('PASS: full funnel, actual cookies, CSRF, origin, concurrent retries, restoration, ownership, stable snapshot/finish, independent rate limits')
+# Only delete the explicitly disposable visitor created in this script, never existing history.
+assert call(owner, 'privacy/delete', {}, csrf=False)[0] == 419
+assert call(owner, 'privacy/delete', {}, origin='https://foreign.example')[0] == 403
+assert call(owner, 'privacy/delete', {'visitor_id': 'foreign'})[0] == 422
+assert call(owner, 'privacy/delete?visitor_id=foreign', {})[0] == 422
+old_cookie = next(c.value for c in owner[0] if c.name == SESSION_COOKIE)
+assert call(owner, 'privacy/delete', {})[1] == {'deleted': True}
+assert next(c.value for c in owner[0] if c.name == SESSION_COOKIE) != old_cookie
+assert call(owner, 'bootstrap')[1]['run'] is None
+assert call(owner, f"runs/{run['id']}")[0] == 404
+assert call(stranger, 'bootstrap')[0] == 200
+# A stale cookie replay cannot recover the deleted visitor identity.
+assert call(clients[0], 'bootstrap')[1]['run'] is None
+print('PASS: deletion CSRF/origin/body/rotation/clean restore/stale-cookie replay; full funnel, actual cookies, CSRF, origin, concurrent retries, restoration, ownership, stable snapshot/finish, independent rate limits')

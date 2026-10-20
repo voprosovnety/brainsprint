@@ -663,6 +663,55 @@
           }
         }
       }
+    },
+    "/api/v1/privacy/delete": {
+      "post": {
+        "summary": "Permanently delete the current anonymous visitor data and rotate its session",
+        "description": "Server session ownership only; requires CSRF. Deletes own run/result/answers and events including landing exposure. Preserves administrators and other visitors. Empty object only, no query parameters.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "maxProperties": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deleted; a fresh anonymous session cookie and CSRF token are returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "deleted"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "419": {
+            "description": "CSRF token missing or expired"
+          },
+          "422": {
+            "description": "Unexpected body or query"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
     }
   },
   "components": {

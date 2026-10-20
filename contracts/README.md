@@ -7,6 +7,7 @@ The browser uses only the frontend origin. The allowlisted `/api/v1` proxy forwa
 | Method | Route | Behavior |
 | --- | --- | --- |
 | GET | `/api/v1/bootstrap` | Latest published landing configuration, stable server experiment assignment, first-touch UTM capture and session-owned run; no exposure recorded |
+| POST | `/api/v1/privacy/delete` | Empty JSON object, no query; CSRF-protected server-owned run/answer/result/events deletion including landing exposure, then anonymous session/CSRF rotation; preserves admin/unrelated visitors |
 | POST | `/api/v1/runs` | Return the existing run, or create one pinned to the latest published version and its configured entry, copying server experiment/UTM context |
 | POST | `/api/v1/events` | Validated actual landing/screen exposure; independent 40/minute limit, UUID and semantic deduplication |
 | GET | `/api/v1/runs/{run}` | Owner-only confirmed state, answers and result; foreign and missing IDs both return 404 |
@@ -54,3 +55,11 @@ Exact authority, deduplication, first-touch rules, delivery limitations, cohorts
 Every query parameter is rejected with 422 at both proxy and backend, including dataset, bounds, SQL and ID parameters. GET bodies cannot alter the caller. POST is unsupported. The consumer per-session rate budget applies; responses remain private/no-store. The proxy adds only this exact GET route and cannot forward `/admin` or Livewire routes.
 
 Administrative cookies are host-only `brainsprint_admin_session`, scoped to `/admin`, HttpOnly, SameSite Strict, with a separate `admin` guard and `admin_sessions` table. Livewire updates use `/admin/livewire/update`; default updates and unused upload/preview routes are blocked before consumer session initialization. These boundaries also apply on one hostname across different ports.
+
+## Anonymous lifecycle and release trust
+
+`POST /api/v1/privacy/delete` takes exactly an empty JSON object (no visitor/run identity or query). Successful `{ "deleted": true }` means the current server-session visitor's run, answers/result and events, including landing-only and legacy linked events, were deleted. Consumer session/CSRF cookies rotate. The original cookie cannot recover that visitor identity: new visitor IDs are random server values stored in the session. Other visitors and the separate admin store are unaffected. Subsequent bootstrap returns no old run and initializes a new anonymous visit; new exposure collection can resume.
+
+Consumer bootstrap/start/show/complete/exposure/delete serialize session access and share a visitor PostgreSQL transaction advisory lock with retention. Restoring an owned run through bootstrap/show updates its stored activity timestamp. The documented 30-day policy and bounded default-preview maintenance command are in [release operation](../docs/DEPLOYMENT.md); no retention execution is automatic yet.
+
+Production API requests require a private `X-Consumer-Proxy` value set only by the server-side Next.js proxy, before any consumer session is created. The proxy overwrites this header; browsers cannot supply identity, forwarded IP or this secret. Private responses/errors are no-store. HTTPS host-only session cookies and fixed backend HTTPS URL generation are enforced in production; localhost retains HTTP. Session budgets default to 60 consumer/40 exposure requests per minute with independent configurable global budgets (600 each). Application throttling is single-replica and not a claim of edge/bot protection.
