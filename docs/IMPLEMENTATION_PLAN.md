@@ -6,7 +6,7 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 
 - The full local funnel, stable landing experiment, events, protected Filament, compact shared-service synthetic analytics, anonymous deletion/retention and production package are implemented. Accepted commits are recorded below.
 - Private source: https://github.com/voprosovnety/brainsprint. Local web: http://127.0.0.1:3000; demo: /demo-analytics; admin: http://127.0.0.1:8008/admin; PostgreSQL loopback: 55432. Check service state and README startup instructions before use.
-- Release candidate `7361261` passed local coordinator inspection of ownership/lifecycle transactions, retention scope, deliberate admin provisioning and deployment packaging, with executor evidence. Its independent chat is `01a154ce-e3ce-7ff3-a0b2-3565600d8a10`; final hosted run 39354228417 is in progress.
+- Release candidate `7361261` is accepted after local coordinator inspection of ownership/lifecycle transactions, retention scope, deliberate admin provisioning and deployment packaging, executor evidence, and successful hosted run 39354228417. Its independent chat is `01a154ce-e3ce-7ff3-a0b2-3565600d8a10`.
 - Local release evidence: 40 existing PostgreSQL cases and eight distinct release cases across the initial sweep/focused regressions; build/typecheck, HTTP session/CSRF/ownership/admin checks, real browser at 390×844 and 1280×720, effective reduced motion, independently reviewed fixes, and a built production Apache/PHP image checked against a disposable isolated PostgreSQL. Existing development history was preserved.
 - Hosted T3 run 39274872105 and T4 run 39279279150 passed. Real provider ingress/TLS, backup restore and recurring maintenance remain external checks; physical touch and additional browser engines are unverified.
 - Local admin credentials exist only in ignored `.local/admin-access.json` with mode 0600. Never copy their content into tracked documents or chat output.
@@ -22,7 +22,7 @@ Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executo
 | T2 | Complete configurable funnel | T1 | Complete | Accepted full funnel at `cf4e385`; eleven PostgreSQL tests, HTTP/browser verification, independent review fixes; no development-data reset |
 | T3 | Events, UTM, and landing A/B test | T2 contracts | Complete | Accepted at `8236371`; definitions in `docs/ANALYTICS.md`; hosted run 39274872105 passed |
 | T4 | Filament and compact public demo analytics | T3 | Complete | Accepted at `785bcbb`; protected read-only admin, shared aggregate service, synthetic-only preview and repeatable seed; hosted run 39279279150 passed |
-| T5 | Integration and MVP release preparation | T1–T4 | In review (hosted CI) | Local release candidate `7361261` and production package verified; final hosted run 39354228417 pending; publication remains separately gated |
+| T5 | Integration and MVP release preparation | T1–T4 | Complete (local release ready) | Accepted candidate `7361261`, isolated production package checks and hosted run 39354228417 passed; public deployment remains separately gated |
 
 T1 intentionally implements only one temporary slice of the single BrainSprint configuration, not an alternative funnel. T2 expands that configuration into the full experience.
 
@@ -45,4 +45,4 @@ Optional only after a finished MVP: PostHog integration if it materially improve
 
 ## Immediate next action
 
-Confirm hosted release run 39354228417, then present the concrete local release candidate for public-deployment/Railway-budget approval. No further feature task is needed for this MVP. After approval, establish authorized provider access, configure runtime secrets/origins, provision within the approved budget, set backup/maintenance policies, deploy, and verify real HTTPS/ingress/cookie behavior before claiming a public launch. Keep the source private unless separately authorized otherwise.
+Await explicit public-deployment/Railway-budget approval for the accepted local release candidate. No further feature task is needed for this MVP. After approval, establish authorized provider access, configure runtime secrets/origins, provision within the approved budget, set backup/maintenance policies, deploy, and verify real HTTPS/ingress/cookie behavior before claiming a public launch. Keep the source private unless separately authorized otherwise.
