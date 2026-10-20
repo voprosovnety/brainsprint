@@ -121,7 +121,7 @@ npm run typecheck --prefix apps/web
 
 The HTTP check completes the full funnel through Next.js with real cookies, CSRF rejection, foreign-origin rejection, concurrent start/completion retries, restoration, cross-session ownership and independent rate limits. It creates a small synthetic development run; no cookies or secrets are printed or saved. Development Laravel's server serializes requests; the checks send overlapping requests, while PostgreSQL uniqueness/row locking enforce retry safety. This is not a load test.
 
-Verification evidence is recorded in the [T2 delivery notes](docs/tasks/T2_COMPLETE_FUNNEL.md), [T3 delivery notes](docs/tasks/T3_ANALYTICS_EXPERIMENT.md#delivery-evidence), and [T4 delivery notes](docs/tasks/T4_ADMIN_DEMO_ANALYTICS.md#delivery-evidence). GitHub Actions runs the focused PostgreSQL suites, production build and typecheck. The corrected baseline CI run at `9b9aa61` was observed successful; no hosted CI run has been observed for the local T4 delivery.
+Verification evidence is recorded in the [T2 delivery notes](docs/tasks/T2_COMPLETE_FUNNEL.md), [T3 delivery notes](docs/tasks/T3_ANALYTICS_EXPERIMENT.md#delivery-evidence), and [T4 delivery notes](docs/tasks/T4_ADMIN_DEMO_ANALYTICS.md#delivery-evidence). GitHub Actions runs the focused PostgreSQL suites, production build and typecheck. Current hosted acceptance and public deployment status are recorded exclusively in [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
 ## Release package and data lifecycle
 
