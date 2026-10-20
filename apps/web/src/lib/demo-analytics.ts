@@ -1,6 +1,7 @@
 export type Rate = { numerator: number; denominator: number; rate: number | null; from?: string };
 export type DemoAnalytics = {
   dataset: "synthetic";
+  v3: { runs: number; totals: Record<string, number>; stage_conversions: Record<string, Rate>; quiz_elapsed_seconds: {count: number; mean: number | null} };
   cohort: { from: string; to_exclusive: string; as_of: string; observation_hours: number };
   totals: Record<string, number>;
   stage_conversions: Record<string, Rate>;

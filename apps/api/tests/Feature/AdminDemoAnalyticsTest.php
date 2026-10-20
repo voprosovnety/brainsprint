@@ -11,7 +11,7 @@ use App\Filament\Resources\FunnelRunResource\Pages\ListRecords;
 use App\Models\AdminUser;
 use App\Models\FunnelRun;
 use Carbon\CarbonImmutable as Time;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\LegacyFunnelSeeder as DatabaseSeeder;
 use Filament\Auth\Pages\Login;
 use Filament\Facades\Filament;
 use Illuminate\Auth\SessionGuard;
@@ -220,7 +220,7 @@ class AdminDemoAnalyticsTest extends TestCase
         foreach (['cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment'] as $key) {
             $this->assertEquals($expected[$key], $response->json($key));
         }
-        $this->assertSame(['dataset', 'cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment'], array_keys($response->json()));
+        $this->assertSame(['dataset', 'cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment', 'v3'], array_keys($response->json()));
         foreach (['visitor_id', 'run_id', 'answers', 'private-real', $id, 'utm', 'admin'] as $private) {
             $response->assertDontSee($private);
         }

@@ -1,12 +1,14 @@
 # Consumer contract
 
+V3 direct-entry quiz, sample-report boundary, mock checkout, guide branches and new event semantics are specified in [V3.md](V3.md) and included in OpenAPI. The legacy screen/experiment sections below apply to pinned v1/v2 runs; they remain supported. New publication uses `brainsprint-v3.json` and no new landing experiment.
+
 The contract is [openapi.json](openapi.json) (OpenAPI 3.1). Frontend types live in `apps/web/src/lib/api.ts`; screen validation lives in `app/Funnel/Answer.php`, publication validation in `app/Funnel/Configuration.php`, and transactional progression in `FunnelController`.
 
 The browser uses only the frontend origin. The allowlisted `/api/v1` proxy forwards Laravel cookies and the CSRF header, preserves every `Set-Cookie`, never caches private state, and rejects foreign write origins. It forwards no browser-controlled identity header. Call `GET /api/v1/bootstrap` to initialize Laravel session and XSRF cookies; send the URL-decoded XSRF cookie as `X-XSRF-TOKEN` for writes. The session cookie is HttpOnly. Production requires secure cookies and HTTPS.
 
 | Method | Route | Behavior |
 | --- | --- | --- |
-| GET | `/api/v1/bootstrap` | Latest published landing configuration, stable server experiment assignment, first-touch UTM capture and session-owned run; no exposure recorded |
+| GET | `/api/v1/bootstrap` | Pinned owned run or latest published configuration, legacy assignment / v3 null experiment, first-touch UTM; no exposure recorded |
 | POST | `/api/v1/privacy/delete` | Empty JSON object, no query; CSRF-protected server-owned run/answer/result/events deletion including landing exposure, then anonymous session/CSRF rotation; preserves admin/unrelated visitors |
 | POST | `/api/v1/runs` | Return the existing run, or create one pinned to the latest published version and its configured entry, copying server experiment/UTM context |
 | POST | `/api/v1/events` | Validated actual landing/screen exposure; independent 40/minute limit, UUID and semantic deduplication |
@@ -30,7 +32,7 @@ One run is retained per anonymous browser session, including after completion. S
 
 ## Versioned configuration
 
-`resources/funnel/brainsprint-v2.json` is the publication source. `php artisan db:seed` validates before inserting a content-addressed immutable version. Changing source affects new sessions only; existing versions/runs are never updated. No configuration-write API exists.
+`resources/funnel/brainsprint-v3.json` is the publication source; v2 source remains available for historical validation. `php artisan db:seed` validates before inserting a content-addressed immutable version. Changing source affects new sessions only; existing versions/runs are never updated. No configuration-write API exists.
 
 The v2 configuration has `entry`, `landing`, `result`, and `steps`. Screens have stable IDs, type, title, description, boolean `enabled`, a bounded `standard`/`spotlight` variant, default `next`, and type-specific parameters. Only the tutorial has `branch.incorrect`; Laravel compares the saved cells to the tutorial pattern. The explanation rejoins the tutorial's default path. Disabled screens follow default `next`. Progress and challenge numbering follow transitions, not array order.
 
@@ -46,11 +48,11 @@ Bootstrap returns `experiment: {id: "landing-curiosity-v1", variant: "A" | "B"}`
 
 Client events use `{event_id: UUID, name, run_id?, step_id?, properties?: {surface?: "page"}}`. Allowed names: `landing_viewed`, `step_viewed`, `result_viewed`, `paywall_reached`. Landing requires bootstrap and no run/screen; other events require an owned run and a current or completed screen with matching type. No future or skipped screen is eligible. Server milestone names and all context overrides are forbidden. Request body is capped at 4096 bytes. UUID retries and repeated semantic views are accepted as no-ops, so `{accepted:true}` does not indicate a new event.
 
-Exact authority, deduplication, first-touch rules, delivery limitations, cohorts, numerators/denominators and the reusable T4 aggregate API are defined once in [analytics definitions](../docs/ANALYTICS.md). The public aggregate endpoint is documented below.
+Exact authority, deduplication, first-touch rules, delivery limitations, cohorts, numerators/denominators and the reusable T4 aggregate API are defined once in [analytics definitions](../docs/ANALYTICS.md). The public aggregate endpoint is documented below; its additional `v3` object contains separate run count, stage totals/conversions and quiz-confirmation elapsed time.
 
 ## Public synthetic analytics
 
-`GET /api/v1/demo-analytics` returns `DemoAnalytics` from the shared `AggregateService`: `dataset`, `cohort`, `totals`, `stage_conversions`, `quiz_elapsed_seconds`, and `experiment` only. It hard-codes `Dataset::Synthetic`, the rolling seven-day `[now-7 days, now)` UTC cohort, `asOf=now`, and a 24-hour observation window. It returns neither raw run/visitor/session IDs, answers, UTM values nor administrative details. Empty denominators remain null; pending experiment exposures remain pending; no winner is declared.
+`GET /api/v1/demo-analytics` returns `DemoAnalytics` from the shared `AggregateService`: `dataset`, `cohort`, `totals`, `stage_conversions`, `quiz_elapsed_seconds`, `experiment`, and separate `v3` aggregates only. It hard-codes `Dataset::Synthetic`, the rolling seven-day `[now-7 days, now)` UTC cohort, `asOf=now`, and a 24-hour observation window. It returns neither raw run/visitor/session IDs, answers, UTM values nor administrative details. Empty denominators remain null; pending experiment exposures remain pending; no winner is declared.
 
 Every query parameter is rejected with 422 at both proxy and backend, including dataset, bounds, SQL and ID parameters. GET bodies cannot alter the caller. POST is unsupported. The consumer per-session rate budget applies; responses remain private/no-store. The proxy adds only this exact GET route and cannot forward `/admin` or Livewire routes.
 

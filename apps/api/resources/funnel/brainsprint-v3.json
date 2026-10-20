@@ -1,0 +1,1556 @@
+{
+  "schema_version": 3,
+  "entry": "remember-word",
+  "landing": {
+    "eyebrow": "BrainSprint",
+    "title": "Keep one word in mind.",
+    "description": "A journey through words, numbers and shapes.",
+    "cta": "Begin"
+  },
+  "result": {
+    "title": "Your thinking profile",
+    "disclaimer": "Illustrative sample content, independent of answer correctness."
+  },
+  "offer": {
+    "id": "report-intro-v3",
+    "comparison_cents": 999,
+    "intro_cents": 99,
+    "intro_days": 3,
+    "renewal_cents": 3999,
+    "renewal_weeks": 4,
+    "countdown_seconds": 300,
+    "guide_id": "guide-v3",
+    "guide_comparison_cents": 2700,
+    "guide_cents": 100
+  },
+  "steps": [
+    {
+      "id": "remember-word",
+      "type": "word_intro",
+      "title": "Keep one word in mind.",
+      "description": "Remember this word. We will ask you about it later.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "verbal-analogy",
+      "word": "LANTERN",
+      "cta": "I\u2019ll remember it"
+    },
+    {
+      "id": "verbal-analogy",
+      "type": "single_choice",
+      "title": "A bird is to a nest as a bee is to\u2026",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "arithmetic",
+      "options": [
+        {
+          "id": "1",
+          "label": "A hive"
+        },
+        {
+          "id": "2",
+          "label": "A flower"
+        },
+        {
+          "id": "3",
+          "label": "A forest"
+        },
+        {
+          "id": "4",
+          "label": "A wing"
+        }
+      ]
+    },
+    {
+      "id": "arithmetic",
+      "type": "single_choice",
+      "title": "Three notebooks cost $12. What do five cost?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "reasoning",
+      "options": [
+        {
+          "id": "1",
+          "label": "$15"
+        },
+        {
+          "id": "2",
+          "label": "$18"
+        },
+        {
+          "id": "3",
+          "label": "$20"
+        },
+        {
+          "id": "4",
+          "label": "$24"
+        }
+      ]
+    },
+    {
+      "id": "reasoning",
+      "type": "single_choice",
+      "title": "All tulips are flowers. Which statement must be true?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "learning-preference",
+      "options": [
+        {
+          "id": "1",
+          "label": "Every flower is a tulip"
+        },
+        {
+          "id": "2",
+          "label": "Every tulip is a flower"
+        },
+        {
+          "id": "3",
+          "label": "No tulips are flowers"
+        },
+        {
+          "id": "4",
+          "label": "All flowers look alike"
+        }
+      ]
+    },
+    {
+      "id": "learning-preference",
+      "type": "scale",
+      "title": "I enjoy figuring out how unfamiliar things work.",
+      "description": "Choose the point that feels closest to you.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "sequence-double",
+      "options": [
+        {
+          "id": "1",
+          "label": "Strongly disagree"
+        },
+        {
+          "id": "2",
+          "label": "Disagree"
+        },
+        {
+          "id": "3",
+          "label": "Neither agree nor disagree"
+        },
+        {
+          "id": "4",
+          "label": "Agree"
+        },
+        {
+          "id": "5",
+          "label": "Strongly agree"
+        }
+      ]
+    },
+    {
+      "id": "sequence-double",
+      "type": "single_choice",
+      "title": "Which number comes next?",
+      "description": "2 \u00b7 4 \u00b7 8 \u00b7 16 \u00b7 ?",
+      "enabled": true,
+      "variant": "standard",
+      "next": "digits-five",
+      "options": [
+        {
+          "id": "1",
+          "label": "24"
+        },
+        {
+          "id": "2",
+          "label": "30"
+        },
+        {
+          "id": "3",
+          "label": "32"
+        },
+        {
+          "id": "4",
+          "label": "36"
+        }
+      ]
+    },
+    {
+      "id": "digits-five",
+      "type": "timed_reveal",
+      "title": "Take a mental snapshot.",
+      "description": "Remember these five digits in order.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "recall-five",
+      "digits": "58317",
+      "reveal_seconds": 5
+    },
+    {
+      "id": "recall-five",
+      "type": "single_choice",
+      "title": "What was the third digit?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "sequence-differences",
+      "options": [
+        {
+          "id": "1",
+          "label": "3"
+        },
+        {
+          "id": "2",
+          "label": "8"
+        },
+        {
+          "id": "3",
+          "label": "1"
+        },
+        {
+          "id": "4",
+          "label": "7"
+        }
+      ]
+    },
+    {
+      "id": "sequence-differences",
+      "type": "single_choice",
+      "title": "Find the next number.",
+      "description": "2 \u00b7 5 \u00b7 10 \u00b7 17 \u00b7 ?",
+      "enabled": true,
+      "variant": "standard",
+      "next": "digits-six",
+      "options": [
+        {
+          "id": "1",
+          "label": "20"
+        },
+        {
+          "id": "2",
+          "label": "24"
+        },
+        {
+          "id": "3",
+          "label": "26"
+        },
+        {
+          "id": "4",
+          "label": "28"
+        }
+      ]
+    },
+    {
+      "id": "digits-six",
+      "type": "timed_reveal",
+      "title": "A little more to remember.",
+      "description": "Keep the six digits in their original order.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "recall-six",
+      "digits": "294681",
+      "reveal_seconds": 5
+    },
+    {
+      "id": "recall-six",
+      "type": "single_choice",
+      "title": "What was the fifth digit?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "digits-seven",
+      "options": [
+        {
+          "id": "1",
+          "label": "4"
+        },
+        {
+          "id": "2",
+          "label": "6"
+        },
+        {
+          "id": "3",
+          "label": "8"
+        },
+        {
+          "id": "4",
+          "label": "1"
+        }
+      ]
+    },
+    {
+      "id": "digits-seven",
+      "type": "timed_reveal",
+      "title": "One final number snapshot.",
+      "description": "Notice the beginning, middle and end.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "recall-seven",
+      "digits": "7319526",
+      "reveal_seconds": 5
+    },
+    {
+      "id": "recall-seven",
+      "type": "single_choice",
+      "title": "What was the second digit?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "spatial-confidence",
+      "options": [
+        {
+          "id": "1",
+          "label": "7"
+        },
+        {
+          "id": "2",
+          "label": "3"
+        },
+        {
+          "id": "3",
+          "label": "9"
+        },
+        {
+          "id": "4",
+          "label": "2"
+        }
+      ]
+    },
+    {
+      "id": "spatial-confidence",
+      "type": "scale",
+      "title": "I can easily picture an object from another angle.",
+      "description": "Choose the point that feels closest to you.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-rotation",
+      "options": [
+        {
+          "id": "1",
+          "label": "Strongly disagree"
+        },
+        {
+          "id": "2",
+          "label": "Disagree"
+        },
+        {
+          "id": "3",
+          "label": "Neither agree nor disagree"
+        },
+        {
+          "id": "4",
+          "label": "Agree"
+        },
+        {
+          "id": "5",
+          "label": "Strongly agree"
+        }
+      ]
+    },
+    {
+      "id": "visual-rotation",
+      "type": "single_choice",
+      "title": "Follow the turning shape.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "pace-break",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/rotation-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/rotation-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/rotation-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/rotation-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/rotation.svg",
+      "asset_alt": "Original rotation reasoning diagram with one missing piece."
+    },
+    {
+      "id": "pace-break",
+      "type": "interstitial",
+      "title": "You\u2019re finding your rhythm.",
+      "description": "Keep going at your own pace. Each new pattern is a fresh start.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-growing-dots",
+      "cta": "Continue"
+    },
+    {
+      "id": "visual-growing-dots",
+      "type": "single_choice",
+      "title": "How does the group grow?",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-alternating-fill",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/growing-dots-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/growing-dots-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/growing-dots-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/growing-dots-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/growing-dots.svg",
+      "asset_alt": "Original growing dots reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-alternating-fill",
+      "type": "single_choice",
+      "title": "Find the missing fill.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-moving-corner",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/alternating-fill-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/alternating-fill-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/alternating-fill-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/alternating-fill-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/alternating-fill.svg",
+      "asset_alt": "Original alternating fill reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-moving-corner",
+      "type": "single_choice",
+      "title": "Where does the marker go?",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "object-classification",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/moving-corner-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/moving-corner-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/moving-corner-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/moving-corner-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/moving-corner.svg",
+      "asset_alt": "Original moving corner reasoning diagram with one missing piece."
+    },
+    {
+      "id": "object-classification",
+      "type": "single_choice",
+      "title": "Which one belongs to a different group?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-nested-shapes",
+      "options": [
+        {
+          "id": "1",
+          "label": "Violin"
+        },
+        {
+          "id": "2",
+          "label": "Trumpet"
+        },
+        {
+          "id": "3",
+          "label": "Piano"
+        },
+        {
+          "id": "4",
+          "label": "Guitar"
+        },
+        {
+          "id": "5",
+          "label": "Flute"
+        },
+        {
+          "id": "6",
+          "label": "Telescope"
+        }
+      ],
+      "presentation": "objects"
+    },
+    {
+      "id": "visual-nested-shapes",
+      "type": "single_choice",
+      "title": "Complete the nested pattern.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-arrow-cycle",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/nested-shapes-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/nested-shapes-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/nested-shapes-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/nested-shapes-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/nested-shapes.svg",
+      "asset_alt": "Original nested shapes reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-arrow-cycle",
+      "type": "single_choice",
+      "title": "Which direction comes next?",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-line-addition",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/arrow-cycle-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/arrow-cycle-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/arrow-cycle-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/arrow-cycle-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/arrow-cycle.svg",
+      "asset_alt": "Original arrow cycle reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-line-addition",
+      "type": "single_choice",
+      "title": "Complete the line pattern.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "category-classification",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/line-addition-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/line-addition-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/line-addition-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/line-addition-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/line-addition.svg",
+      "asset_alt": "Original line addition reasoning diagram with one missing piece."
+    },
+    {
+      "id": "category-classification",
+      "type": "single_choice",
+      "title": "Which item is different from the others?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-mirror",
+      "options": [
+        {
+          "id": "1",
+          "label": "Maple"
+        },
+        {
+          "id": "2",
+          "label": "Willow"
+        },
+        {
+          "id": "3",
+          "label": "Oak"
+        },
+        {
+          "id": "4",
+          "label": "Birch"
+        },
+        {
+          "id": "5",
+          "label": "Pine"
+        },
+        {
+          "id": "6",
+          "label": "Rose"
+        }
+      ],
+      "presentation": "objects"
+    },
+    {
+      "id": "visual-mirror",
+      "type": "single_choice",
+      "title": "Find the mirror image.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-shape-subtraction",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/mirror-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/mirror-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/mirror-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/mirror-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/mirror.svg",
+      "asset_alt": "Original mirror reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-shape-subtraction",
+      "type": "single_choice",
+      "title": "Which piece remains?",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-matrix-count",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/shape-subtraction-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/shape-subtraction-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/shape-subtraction-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/shape-subtraction-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/shape-subtraction.svg",
+      "asset_alt": "Original shape subtraction reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-matrix-count",
+      "type": "single_choice",
+      "title": "Complete the counting matrix.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-polygon-growth",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/matrix-count-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/matrix-count-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/matrix-count-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/matrix-count-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/matrix-count.svg",
+      "asset_alt": "Original matrix count reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-polygon-growth",
+      "type": "single_choice",
+      "title": "What shape follows?",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "landmark",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/polygon-growth-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/polygon-growth-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/polygon-growth-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/polygon-growth-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/polygon-growth.svg",
+      "asset_alt": "Original polygon growth reasoning diagram with one missing piece."
+    },
+    {
+      "id": "landmark",
+      "type": "single_choice",
+      "title": "Which city is associated with this landmark?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "encouragement",
+      "options": [
+        {
+          "id": "1",
+          "label": "Paris"
+        },
+        {
+          "id": "2",
+          "label": "Rome"
+        },
+        {
+          "id": "3",
+          "label": "London"
+        },
+        {
+          "id": "4",
+          "label": "Athens"
+        }
+      ],
+      "asset": "/v3/landmark.svg",
+      "asset_alt": "Original illustration of a tall iron lattice tower."
+    },
+    {
+      "id": "encouragement",
+      "type": "interstitial",
+      "title": "A new perspective, one question at a time.",
+      "description": "You have already explored words, numbers and shapes.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-folded-paper",
+      "cta": "Let\u2019s keep going"
+    },
+    {
+      "id": "visual-folded-paper",
+      "type": "single_choice",
+      "title": "Imagine unfolding the paper.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "recall-word",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/folded-paper-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/folded-paper-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/folded-paper-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/folded-paper-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/folded-paper.svg",
+      "asset_alt": "Original folded paper reasoning diagram with one missing piece."
+    },
+    {
+      "id": "recall-word",
+      "type": "single_choice",
+      "title": "Which word did you remember at the beginning?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-overlap",
+      "options": [
+        {
+          "id": "1",
+          "label": "HARBOR"
+        },
+        {
+          "id": "2",
+          "label": "LANTERN"
+        },
+        {
+          "id": "3",
+          "label": "GARDEN"
+        },
+        {
+          "id": "4",
+          "label": "MEADOW"
+        },
+        {
+          "id": "5",
+          "label": "COMPASS"
+        }
+      ]
+    },
+    {
+      "id": "visual-overlap",
+      "type": "single_choice",
+      "title": "Find the combined shape.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-size-rhythm",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/overlap-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/overlap-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/overlap-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/overlap-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/overlap.svg",
+      "asset_alt": "Original overlap reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-size-rhythm",
+      "type": "single_choice",
+      "title": "Follow the changing size.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-diagonal-motion",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/size-rhythm-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/size-rhythm-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/size-rhythm-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/size-rhythm-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/size-rhythm.svg",
+      "asset_alt": "Original size rhythm reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-diagonal-motion",
+      "type": "single_choice",
+      "title": "Track the moving dot.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-sector-turn",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/diagonal-motion-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/diagonal-motion-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/diagonal-motion-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/diagonal-motion-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/diagonal-motion.svg",
+      "asset_alt": "Original diagonal motion reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-sector-turn",
+      "type": "single_choice",
+      "title": "Complete the circle pattern.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-balance",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/sector-turn-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/sector-turn-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/sector-turn-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/sector-turn-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/sector-turn.svg",
+      "asset_alt": "Original sector turn reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-balance",
+      "type": "single_choice",
+      "title": "Keep the balance level.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-cube-net",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/balance-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/balance-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/balance-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/balance-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/balance.svg",
+      "asset_alt": "Original balance reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-cube-net",
+      "type": "single_choice",
+      "title": "Which symbol is opposite the star?",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "emerging-profile",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/cube-net-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/cube-net-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/cube-net-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/cube-net-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/cube-net.svg",
+      "asset_alt": "Original cube net reasoning diagram with one missing piece."
+    },
+    {
+      "id": "emerging-profile",
+      "type": "interstitial",
+      "title": "The pieces are coming together.",
+      "description": "Your journey now spans memory, language and visual reasoning.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-path",
+      "cta": "Continue"
+    },
+    {
+      "id": "visual-path",
+      "type": "single_choice",
+      "title": "Complete the rotated route.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-symmetry",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/path-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/path-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/path-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/path-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/path.svg",
+      "asset_alt": "Original path reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-symmetry",
+      "type": "single_choice",
+      "title": "Choose the symmetrical figure.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-tile-composition",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/symmetry-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/symmetry-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/symmetry-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/symmetry-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/symmetry.svg",
+      "asset_alt": "Original symmetry reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-tile-composition",
+      "type": "single_choice",
+      "title": "Which tile completes the square?",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-two-rules",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/tile-composition-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/tile-composition-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/tile-composition-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/tile-composition-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/tile-composition.svg",
+      "asset_alt": "Original tile composition reasoning diagram with one missing piece."
+    },
+    {
+      "id": "visual-two-rules",
+      "type": "single_choice",
+      "title": "Follow both changing rules.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "nearly-there",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/two-rules-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/two-rules-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/two-rules-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/two-rules-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/two-rules.svg",
+      "asset_alt": "Original two rules reasoning diagram with one missing piece."
+    },
+    {
+      "id": "nearly-there",
+      "type": "interstitial",
+      "title": "One more visual challenge.",
+      "description": "Then a few details will help shape your report experience.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "visual-final-matrix",
+      "cta": "I\u2019m ready"
+    },
+    {
+      "id": "visual-final-matrix",
+      "type": "single_choice",
+      "title": "Complete the final pattern.",
+      "description": "Choose the missing piece.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "attitude-challenge",
+      "options": [
+        {
+          "id": "1",
+          "label": "A",
+          "asset": "/v3/final-matrix-1.svg"
+        },
+        {
+          "id": "2",
+          "label": "B",
+          "asset": "/v3/final-matrix-2.svg"
+        },
+        {
+          "id": "3",
+          "label": "C",
+          "asset": "/v3/final-matrix-3.svg"
+        },
+        {
+          "id": "4",
+          "label": "D",
+          "asset": "/v3/final-matrix-4.svg"
+        }
+      ],
+      "presentation": "image",
+      "asset": "/v3/final-matrix.svg",
+      "asset_alt": "Original final matrix reasoning diagram with one missing piece."
+    },
+    {
+      "id": "attitude-challenge",
+      "type": "scale",
+      "title": "I enjoy a challenge even when the answer isn\u2019t obvious.",
+      "description": "Choose the point that feels closest to you.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "self-comparison",
+      "options": [
+        {
+          "id": "1",
+          "label": "Strongly disagree"
+        },
+        {
+          "id": "2",
+          "label": "Disagree"
+        },
+        {
+          "id": "3",
+          "label": "Neither agree nor disagree"
+        },
+        {
+          "id": "4",
+          "label": "Agree"
+        },
+        {
+          "id": "5",
+          "label": "Strongly agree"
+        }
+      ]
+    },
+    {
+      "id": "self-comparison",
+      "type": "scale",
+      "title": "I often notice patterns that other people overlook.",
+      "description": "Choose the point that feels closest to you.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "age-bracket",
+      "options": [
+        {
+          "id": "1",
+          "label": "Strongly disagree"
+        },
+        {
+          "id": "2",
+          "label": "Disagree"
+        },
+        {
+          "id": "3",
+          "label": "Neither agree nor disagree"
+        },
+        {
+          "id": "4",
+          "label": "Agree"
+        },
+        {
+          "id": "5",
+          "label": "Strongly agree"
+        }
+      ]
+    },
+    {
+      "id": "age-bracket",
+      "type": "single_choice",
+      "title": "What is your age range?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "education",
+      "options": [
+        {
+          "id": "1",
+          "label": "Under 18"
+        },
+        {
+          "id": "2",
+          "label": "18\u201324"
+        },
+        {
+          "id": "3",
+          "label": "25\u201334"
+        },
+        {
+          "id": "4",
+          "label": "35\u201344"
+        },
+        {
+          "id": "5",
+          "label": "45\u201354"
+        },
+        {
+          "id": "6",
+          "label": "55\u201364"
+        },
+        {
+          "id": "7",
+          "label": "65+"
+        }
+      ],
+      "role": "demographic"
+    },
+    {
+      "id": "education",
+      "type": "single_choice",
+      "title": "What is your highest level of education?",
+      "description": "Choose the answer that fits best.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "confirm-answers",
+      "options": [
+        {
+          "id": "1",
+          "label": "Secondary school"
+        },
+        {
+          "id": "2",
+          "label": "Some college"
+        },
+        {
+          "id": "3",
+          "label": "Vocational qualification"
+        },
+        {
+          "id": "4",
+          "label": "Bachelor\u2019s degree"
+        },
+        {
+          "id": "5",
+          "label": "Postgraduate degree"
+        },
+        {
+          "id": "6",
+          "label": "Prefer not to say"
+        }
+      ],
+      "role": "demographic"
+    },
+    {
+      "id": "confirm-answers",
+      "type": "confirmation",
+      "title": "Ready to bring it all together?",
+      "description": "Confirm your answers to prepare your thinking profile.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "community",
+      "cta": "Confirm my answers"
+    },
+    {
+      "id": "community",
+      "type": "interstitial",
+      "title": "Curiosity brings us together.",
+      "description": "A moment to pause, reflect and discover a different way to look at everyday challenges.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "prepare-report",
+      "cta": "Prepare my report",
+      "art": "/v3/community.svg"
+    },
+    {
+      "id": "prepare-report",
+      "type": "processing",
+      "title": "Connecting the dots.",
+      "description": "Organizing your report across memory, patterns and reasoning.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "report-email",
+      "prompts": [
+        {
+          "id": "focus",
+          "title": "Would you like ideas for staying focused?"
+        },
+        {
+          "id": "practice",
+          "title": "Would you enjoy a short daily practice?"
+        }
+      ],
+      "stages": [
+        "Organizing your answers",
+        "Building your profile",
+        "Preparing practical suggestions"
+      ],
+      "duration_seconds": 9
+    },
+    {
+      "id": "report-email",
+      "type": "email",
+      "title": "Where would you keep your report?",
+      "description": "Use the sample address, enter an optional address, or skip this step. Your report opens here.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "prepare-profile",
+      "sample_email": "reader@example.com",
+      "cta": "Continue"
+    },
+    {
+      "id": "prepare-profile",
+      "type": "processing",
+      "title": "Your profile is taking shape.",
+      "description": "A few finishing touches for your report.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "report-offer",
+      "prompts": [],
+      "stages": [
+        "Assembling your report",
+        "Adding your practice ideas",
+        "Ready to explore"
+      ],
+      "duration_seconds": 5
+    },
+    {
+      "id": "report-offer",
+      "type": "paywall",
+      "title": "A fresh look at the way you think.",
+      "description": "Your report is ready. Explore the patterns, strengths and practical ideas inside.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "guide-offer",
+      "offer_id": "report-intro-v3"
+    },
+    {
+      "id": "guide-offer",
+      "type": "upsell",
+      "title": "Make curiosity a daily habit.",
+      "description": "Add the illustrated Everyday Thinking guide to your report.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "guide-finish",
+      "offer_id": "guide-v3",
+      "decline_next": "report-finish"
+    },
+    {
+      "id": "guide-finish",
+      "type": "final",
+      "title": "Your next chapter starts here.",
+      "description": "Your report and Everyday Thinking guide are ready to explore.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "done",
+      "guide": true
+    },
+    {
+      "id": "report-finish",
+      "type": "final",
+      "title": "Make room for a new perspective.",
+      "description": "Your report is ready. Choose one idea to carry into your day.",
+      "enabled": true,
+      "variant": "standard",
+      "next": "done",
+      "guide": false
+    }
+  ]
+}

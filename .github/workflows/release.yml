@@ -13,6 +13,7 @@ on:
     types: [completed]
 permissions:
   contents: write
+  actions: read
 concurrency:
   group: brainsprint-release-database
   cancel-in-progress: false
@@ -61,6 +62,30 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_COMMIT: ${{ github.event.workflow_run.head_sha }}
         run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$RELEASE_COMMIT"
+      - name: Enforce conservative backup storage budget
+        if: github.event_name == 'workflow_run' || inputs.operation == 'initialize' || inputs.operation == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          bytes=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" --jq '[.artifacts[] | select(.expired == false) | .size_in_bytes] | add // 0' | awk '{sum += $1} END {print sum}')
+          if [ "$bytes" -gt 104857600 ]; then
+            echo 'Backup storage exceeds the 100 MiB guard; release stopped.'
+            exit 1
+          fi
+      - name: Create encrypted backup before release changes
+        if: github.event_name == 'workflow_run' || inputs.operation == 'initialize' || inputs.operation == 'release'
+        env:
+          BRAINSPRINT_BACKUP_DOCKER: '1'
+        run: python3 infra/production/backup.py
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_run' || inputs.operation == 'initialize' || inputs.operation == 'release'
+        with:
+          name: release-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/brainsprint-backup.cms
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
       - name: Apply explicit migrations and configuration publication
         if: github.event_name == 'workflow_run' || inputs.operation == 'initialize' || inputs.operation == 'release'
         working-directory: apps/api
@@ -90,3 +115,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: python3 infra/production/publish.py
+      - name: Remove temporary encrypted backup
+        if: always()
+        run: rm -f "$RUNNER_TEMP/brainsprint-backup.cms"

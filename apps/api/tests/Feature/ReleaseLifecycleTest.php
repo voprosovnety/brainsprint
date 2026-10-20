@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Lifecycle\Retention;
 use App\Models\AdminUser;
 use Carbon\CarbonImmutable as Time;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\LegacyFunnelSeeder as DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;

@@ -148,7 +148,7 @@
             }
           }
         },
-        "description": "Assign the stable landing experiment before rendering, preserve first-touch UTM, and return session-owned progress. This request does not record exposure."
+        "description": "Restore pinned owned progress first; latest published configuration for new visitors. V3 enters word memory directly and returns experiment:null. Legacy assignment and first-touch UTM are preserved. No exposure recorded."
       }
     },
     "/api/v1/runs": {
@@ -507,7 +507,7 @@
             }
           }
         },
-        "description": "Validate a response against the pinned screen, save the answer and milestones atomically, and advance by server transition rules. Same canonical response is idempotent, even on an old completed screen; a different response returns 409. Wrong owner returns 404. Entering result emits quiz_completed once; acknowledging boundary emits demo_completed once. Exposures are not emitted here."
+        "description": "Validate and atomically persist the pinned answer/transition and deduplicated server milestones. V1/V2 remain unchanged. V3 confirms a private sample report once, returns only teaser before mock unlock, persists countdown/unlock/upsell, and completes a selected final. Identical retries restore current state; no financial data accepted. See V3.md."
       }
     },
     "/api/v1/events": {
@@ -792,6 +792,9 @@
           },
           {
             "$ref": "#/components/schemas/LegacyConfiguration"
+          },
+          {
+            "$ref": "#/components/schemas/V3Configuration"
           }
         ]
       },
@@ -835,66 +838,6 @@
         ],
         "additionalProperties": false
       },
-      "Run": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "configuration_version": {
-            "type": "string"
-          },
-          "configuration": {
-            "$ref": "#/components/schemas/Configuration"
-          },
-          "current_step": {
-            "type": "string",
-            "description": "Canonical screen ID or done. Historical T1 result is terminal without a boundary."
-          },
-          "completed_steps": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "minItems": 0,
-            "maxItems": 24,
-            "uniqueItems": true
-          },
-          "result": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/Result"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "answers": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Answer"
-            },
-            "description": "Owner-only canonical saved responses, keyed by completed screen ID."
-          },
-          "demo_completed": {
-            "type": "boolean",
-            "description": "True only after a v2 boundary acknowledgement. Historical T1 result remains a completed memory preview."
-          }
-        },
-        "required": [
-          "id",
-          "configuration_version",
-          "configuration",
-          "current_step",
-          "completed_steps",
-          "result",
-          "answers",
-          "demo_completed"
-        ],
-        "additionalProperties": false
-      },
       "Bootstrap": {
         "type": "object",
         "properties": {
@@ -915,7 +858,14 @@
             ]
           },
           "experiment": {
-            "$ref": "#/components/schemas/Experiment"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Experiment"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -930,7 +880,14 @@
         "type": "object",
         "properties": {
           "answer": {
-            "$ref": "#/components/schemas/Answer"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Answer"
+              },
+              {
+                "$ref": "#/components/schemas/V3Answer"
+              }
+            ]
           }
         },
         "required": [
@@ -1584,7 +1541,10 @@
               "landing_viewed",
               "step_viewed",
               "result_viewed",
-              "paywall_reached"
+              "paywall_reached",
+              "paywall_viewed_v3",
+              "checkout_viewed_v3",
+              "report_viewed_v3"
             ]
           },
           "run_id": {
@@ -1619,7 +1579,7 @@
           "name"
         ],
         "additionalProperties": false,
-        "description": "Landing: omit run_id/step_id. Other names require an owned run and current or previously completed screen; name must match screen type. All context and timestamps come from the server."
+        "description": "Landing: omit run_id/step_id. Other names require an owned run and current or previously completed screen; name must match screen type. All context and timestamps come from the server. V3 paywall and checkout exposures match paywall; report exposure requires an unlocked final. Each event name has a separate semantic identity. No email/financial fields."
       },
       "AggregateRate": {
         "type": "object",
@@ -1692,7 +1652,8 @@
           "totals",
           "stage_conversions",
           "quiz_elapsed_seconds",
-          "experiment"
+          "experiment",
+          "v3"
         ],
         "properties": {
           "dataset": {
@@ -1980,6 +1941,709 @@
                 }
               }
             }
+          },
+          "v3": {
+            "type": "object",
+            "properties": {
+              "runs": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "totals": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "stage_conversions": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/V3StageRate"
+                }
+              },
+              "quiz_elapsed_seconds": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "count",
+                  "mean"
+                ],
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "mean": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              }
+            },
+            "required": [
+              "runs",
+              "totals",
+              "stage_conversions",
+              "quiz_elapsed_seconds"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "LegacyRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "configuration_version": {
+            "type": "string"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/Configuration"
+          },
+          "current_step": {
+            "type": "string",
+            "description": "Canonical screen ID or done. Historical T1 result is terminal without a boundary."
+          },
+          "completed_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 0,
+            "maxItems": 24,
+            "uniqueItems": true
+          },
+          "result": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Result"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answers": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "description": "Owner-only canonical saved responses, keyed by completed screen ID."
+          },
+          "demo_completed": {
+            "type": "boolean",
+            "description": "True only after a v2 boundary acknowledgement. Historical T1 result remains a completed memory preview."
+          }
+        },
+        "required": [
+          "id",
+          "configuration_version",
+          "configuration",
+          "current_step",
+          "completed_steps",
+          "result",
+          "answers",
+          "demo_completed"
+        ],
+        "additionalProperties": false
+      },
+      "Run": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/LegacyRun"
+          },
+          {
+            "$ref": "#/components/schemas/V3Run"
+          }
+        ]
+      },
+      "V3Option": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string",
+            "pattern": "^/v3/[a-z0-9-]+\\.svg$"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "V3Screen": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "word_intro",
+              "single_choice",
+              "scale",
+              "timed_reveal",
+              "interstitial",
+              "confirmation",
+              "processing",
+              "email",
+              "paywall",
+              "upsell",
+              "final"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "variant": {
+            "enum": [
+              "standard",
+              "spotlight"
+            ]
+          },
+          "next": {
+            "type": "string"
+          },
+          "word": {
+            "type": "string"
+          },
+          "digits": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "cta": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "asset_alt": {
+            "type": "string"
+          },
+          "art": {
+            "type": "string"
+          },
+          "sample_email": {
+            "type": "string"
+          },
+          "offer_id": {
+            "type": "string"
+          },
+          "decline_next": {
+            "type": "string"
+          },
+          "presentation": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "guide": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V3Option"
+            },
+            "minItems": 2,
+            "maxItems": 8
+          },
+          "reveal_seconds": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 10
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5
+          },
+          "prompts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "enum": [
+                    "focus",
+                    "practice"
+                  ]
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 2
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "description",
+          "enabled",
+          "variant",
+          "next"
+        ],
+        "additionalProperties": false
+      },
+      "V3Configuration": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 3
+          },
+          "entry": {
+            "type": "string"
+          },
+          "landing": {
+            "type": "object",
+            "properties": {
+              "eyebrow": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "cta": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "eyebrow",
+              "title",
+              "description",
+              "cta"
+            ],
+            "additionalProperties": false
+          },
+          "result": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "disclaimer": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "disclaimer"
+            ],
+            "additionalProperties": false
+          },
+          "offer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "comparison_cents": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "intro_cents": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "intro_days": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "renewal_cents": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "renewal_weeks": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "countdown_seconds": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "guide_id": {
+                "type": "string"
+              },
+              "guide_comparison_cents": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "guide_cents": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "comparison_cents",
+              "intro_cents",
+              "intro_days",
+              "renewal_cents",
+              "renewal_weeks",
+              "countdown_seconds",
+              "guide_id",
+              "guide_comparison_cents",
+              "guide_cents"
+            ],
+            "additionalProperties": false
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/V3Screen"
+            },
+            "minItems": 58,
+            "maxItems": 58
+          }
+        },
+        "required": [
+          "schema_version",
+          "entry",
+          "landing",
+          "result",
+          "offer",
+          "steps"
+        ],
+        "additionalProperties": false
+      },
+      "V3Report": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "const": "illustrative_sample"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "disclaimer": {
+            "type": "string"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                },
+                "practice": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "body",
+                "practice"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 10
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "summary",
+          "disclaimer",
+          "sections"
+        ],
+        "additionalProperties": false
+      },
+      "V3Answer": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "choice": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "choice"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "acknowledged": {
+                "const": true
+              }
+            },
+            "required": [
+              "acknowledged"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "focus": {
+                "enum": [
+                  "yes",
+                  "no"
+                ]
+              },
+              "practice": {
+                "enum": [
+                  "yes",
+                  "no"
+                ]
+              }
+            },
+            "required": [
+              "focus",
+              "practice"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "email",
+                "maxLength": 254
+              }
+            },
+            "required": [
+              "email"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "offer_id": {
+                "const": "report-intro-v3"
+              },
+              "acknowledged": {
+                "const": true
+              }
+            },
+            "required": [
+              "offer_id",
+              "acknowledged"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "decision": {
+                "enum": [
+                  "accept",
+                  "decline"
+                ]
+              }
+            },
+            "required": [
+              "decision"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "V3Run": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "configuration_version": {
+            "type": "string"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/V3Configuration"
+          },
+          "current_step": {
+            "type": "string"
+          },
+          "completed_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 58,
+            "uniqueItems": true
+          },
+          "answers": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/V3Answer"
+            }
+          },
+          "demo_completed": {
+            "type": "boolean"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "teaser": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "summary": {
+                    "type": "string"
+                  },
+                  "sections": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "title",
+                  "summary",
+                  "sections"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/V3Report"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "commerce": {
+            "type": "object",
+            "properties": {
+              "deadline": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "unlocked": {
+                "type": "boolean"
+              },
+              "upsell": {
+                "enum": [
+                  "accept",
+                  "decline",
+                  null
+                ]
+              }
+            },
+            "required": [
+              "deadline",
+              "unlocked",
+              "upsell"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "configuration_version",
+          "configuration",
+          "current_step",
+          "completed_steps",
+          "answers",
+          "demo_completed",
+          "started_at",
+          "teaser",
+          "result",
+          "commerce"
+        ],
+        "additionalProperties": false
+      },
+      "V3StageRate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "numerator",
+          "denominator",
+          "rate",
+          "from"
+        ],
+        "properties": {
+          "numerator": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "denominator": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rate": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "from": {
+            "type": "string"
           }
         }
       }

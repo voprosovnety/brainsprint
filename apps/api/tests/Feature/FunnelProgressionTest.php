@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Funnel\Configuration;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\LegacyFunnelSeeder as DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;

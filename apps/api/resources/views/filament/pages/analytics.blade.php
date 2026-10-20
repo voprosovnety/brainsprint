@@ -19,6 +19,13 @@
         </tbody></table></div>
         <p style="margin-top:1rem">Paywall reached means the no-payment demo boundary. Missing views are not invented. Adjacent conversion intersects observed stages.</p>
     </x-filament::section>
+    <x-filament::section heading="V3 stages · separate cohort">
+        <p>{{ $metrics['v3']['runs'] }} runs. Simulated unlocks are not purchases or revenue.</p>
+        <div role="region" tabindex="0" aria-label="V3 stages" style="overflow-x:auto"><table class="bs-table"><thead><tr><th>Stage</th><th>Unique runs</th><th>Conversion from previous</th></tr></thead><tbody>
+        @foreach($metrics['v3']['totals'] as $stage => $count)<tr><td>{{ ucwords(str_replace('_',' ', $stage)) }}</td><td>{{ $count }}</td><td>@if(isset($metrics['v3']['stage_conversions'][$stage]))@php($c=$metrics['v3']['stage_conversions'][$stage]){{ $c['numerator'] }} / {{ $c['denominator'] }} · {{ $c['rate'] === null ? 'No eligible denominator' : round($c['rate']*100,1).'%' }}@else — @endif</td></tr>@endforeach
+        </tbody></table></div>
+        <p>Quiz confirmation mean: {{ $metrics['v3']['quiz_elapsed_seconds']['mean'] === null ? 'No confirmations' : round($metrics['v3']['quiz_elapsed_seconds']['mean']).' seconds' }}. Includes paused and background time.</p>
+    </x-filament::section>
     <x-filament::section heading="Steps: observation and follow-up">
         <div role="region" tabindex="0" aria-label="Scrollable data table" style="overflow-x:auto"><table class="bs-table"><thead><tr><th>Version / step</th><th>Viewed / completed</th><th>Completed among viewed</th><th>Not completed after window</th><th>Pending</th><th>Completed without view</th></tr></thead><tbody>
         @forelse($metrics['steps'] as $step)<tr><td>{{ $step['configuration_version'] }}<br>{{ $step['step_id'] }}</td><td>{{ $step['viewed'] }} / {{ $step['completed'] }}</td><td>{{ $step['completion_among_viewed']['numerator'] }} / {{ $step['completion_among_viewed']['denominator'] }}</td><td>{{ $step['not_completed_after_observation'] }}</td><td>{{ $step['pending_observation'] }}</td><td>{{ $step['completed_without_recorded_view'] }}</td></tr>@empty<tr><td colspan="6">No recorded step observations.</td></tr>@endforelse

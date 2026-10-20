@@ -2,6 +2,27 @@
 
 This is the single metric definition reference for the Laravel `App\Analytics\AggregateService`. Filament and public demo callers must consume its output rather than calculate their own versions of these metrics.
 
+## V3 semantics and version cohorts
+
+V3 does not show a landing or create a new landing-copy assignment. Existing v1/v2 assignment, first exposure and events remain unchanged. First-touch UTM and synthetic policy apply to all versions. The legacy collection/event/cohort descriptions below keep their original meanings.
+
+| V3 event | Authority | Meaning |
+| --- | --- | --- |
+| `quiz_confirmed_v3` | Server, confirmation transaction | All 41 main responses confirmed and the illustrative sample report generated once |
+| `processing_completed_v3` | Server, final preparation transaction | Profile preparation completed and paywall entered; earlier report preparation remains a step completion |
+| `paywall_viewed_v3` | Client actual exposure | Paywall shown, without inferring checkout/report access |
+| `checkout_viewed_v3` | Client actual exposure | The common mock checkout dialog is visibly open |
+| `mock_unlocked_v3` | Server, acknowledged offer transaction | Simulated report unlock persisted; never a purchase |
+| `upsell_decided_v3` | Server, guide transaction | Accept or decline persisted; outcome stays in private answers/state |
+| `report_viewed_v3` | Client actual exposure | Unlocked report shown on the chosen final screen |
+| `funnel_completed_v3` | Server, final acknowledgement | Chosen final acknowledged |
+
+`funnel_started`, `step_viewed` and `step_completed` retain their existing meanings. V3 milestone uniqueness is run/name/triggering screen; view uniqueness is run/name/screen so checkout and paywall are distinct. The API validates owned current/completed screens and requires unlock for report view. No purchase, revenue, financial detail, email, answer or guide outcome properties enter events. Screen views remain client assertions with bounded delivery, never invented from transitions.
+
+The shared service returns a separate `v3` object: run count, unique stage totals, adjacent `stage_conversions` and quiz-confirmation wall-clock time. The path is `funnel_started → quiz_confirmed_v3 → processing_completed_v3 → paywall_viewed_v3 → checkout_viewed_v3 → mock_unlocked_v3 → upsell_decided_v3 → report_viewed_v3 → funnel_completed_v3`. Every denominator is observed previous-stage runs pinned to schema 3; numerators intersect both sets. Both guide outcomes qualify. Legacy conversions exclude v3 from eligible denominators, and legacy elapsed time continues to use only `quiz_completed`. Top-level `runs`/`funnel_started` cover the complete cohort; older stage totals retain their event meanings. V3 timing is separate. UTM summaries add `quiz_confirmed_v3` alongside historical completion counts. Steps remain grouped by pinned version; checkout exposure is a separate stage, not an invented ordinary screen view. Zero denominators stay null.
+
+Public synthetic and protected administrative views use those shared results. Synthetic seeding appends a `demo-v3` cohort with partial paths and both final outcomes, while preserving earlier `demo-v1` samples and their experiment. Seeding never publishes a version, updates ordinary visitors or generates a real purchase. Sample report content and social fixtures shown in the funnel are separate from this analytics dataset.
+
 ## Collection and trust
 
 `VisitorContext` creates a pseudonymous visitor inside the database-backed Laravel session. `landing-curiosity-v1` uses a server-keyed deterministic 50/50 A/B assignment stored in that session before either landing is rendered. New runs copy the assignment; existing runs retain null historical context. The browser cannot select a variant. A uses the published landing copy and Memory preview; B uses curiosity copy, a three-category composition, and **Find my rhythm**. Both start the identical published funnel.
@@ -47,7 +68,7 @@ $metrics = app(AggregateService::class)->summarize(
 );
 ```
 
-The range is half-open `[from,to)` and at most 93 days; `to <= asOf`, with `asOf` defaulting to now. Observation is 1–168 hours, default 24. All inputs are instants: SQL bindings preserve their offsets and microseconds. Filament constrains authenticated date ranges and observation windows. The public demo caller hard-codes the synthetic enum, rolling seven-day bounds and 24-hour observation, rejects all query parameters, and returns a compact allowlist of the shared result fields. Output includes aggregates only, with no run IDs, visitors, cookies or answers. UTM group labels still contain supplied campaign strings; they are safe only within the chosen dataset/access policy and must be rendered as text.
+The range is half-open `[from,to)` and at most 93 days; `to <= asOf`, with `asOf` defaulting to now. Observation is 1–168 hours, default 24. All inputs are instants: SQL bindings preserve their offsets and microseconds. Filament constrains authenticated date ranges and observation windows. The public demo caller hard-codes the synthetic enum, rolling seven-day bounds and 24-hour observation, rejects all query parameters, and returns a compact allowlist of the shared result fields, including the separate v3 aggregate object. Output includes aggregates only, with no run IDs, visitors, cookies or answers. UTM group labels still contain supplied campaign strings; they are safe only within the chosen dataset/access policy and must be rendered as text.
 
 This small demo service loads the selected cohort's rows into memory. It is not a warehouse or a high-volume reporting engine. There is no `all` dataset or client-controlled synthetic flag. A public controller must not forward arbitrary query parameters into the dataset selection.
 
@@ -73,8 +94,8 @@ A start after `to` can qualify if it is within that visitor's exposure window. S
 
 ## Presentations
 
-Filament uses `AggregateService` for its validated UTC range and selected Real (default) or Synthetic dataset. It shows totals, adjacent conversions, step observation/noncompletion/pending, elapsed wall-clock time, UTM tuples and mature first-exposure A/B counts without declaring a winner. Administrative text is escaped, including supplied UTM. The public caller uses the same service with fixed inputs and returns only cohort/totals/stage conversions/elapsed/experiment fields. Its bar lengths merely represent returned stage totals relative to run count; neither frontend recomputes conversion denominators. Public samples include all synthetic activity in that window, not just seeded rows.
+Filament uses `AggregateService` for its validated UTC range and selected Real (default) or Synthetic dataset. It shows totals, adjacent conversions, step observation/noncompletion/pending, elapsed wall-clock time, UTM tuples and mature first-exposure A/B counts without declaring a winner. Administrative text is escaped, including supplied UTM. The public caller uses the same service with fixed inputs and returns only cohort/totals/stage conversions/elapsed/experiment and v3 aggregate fields. Its bar lengths merely represent returned stage totals relative to run count; neither frontend recomputes conversion denominators. Public samples include all synthetic activity in that window, not just seeded rows.
 
 ## Data lifecycle
 
-The consumer may delete its server-session visitor's run and all associated events, including landing exposure. This changes subsequent aggregate denominators/numerators; no tombstone identity or historical fabricated counts are retained. The fresh anonymous session can record new activity. Retention uses the visitor's latest run creation/update/restore or associated event and removes eligible groups after more than 30 days, including synthetic samples and landing-only visitors. Legacy linked events refresh their owning visitor; old unattributable events are removed by timestamp. Configurations/admin users remain. Session expiry is separate. `privacy:retention` previews bounded counts unless `--execute` is supplied; no recurring invocation is configured yet. See [release operation](DEPLOYMENT.md) for exact boundaries, commands and backups.
+The consumer may delete its server-session visitor's run and all associated events, including landing exposure. This changes subsequent aggregate denominators/numerators; no tombstone identity or historical fabricated counts are retained. The fresh anonymous session can record new activity. Retention uses the visitor's latest run creation/update/restore or associated event and removes eligible groups after more than 30 days, including synthetic samples and landing-only visitors. Legacy linked events refresh their owning visitor; old unattributable events are removed by timestamp. Configurations/admin users remain. Session expiry is separate. `privacy:retention` previews bounded counts unless `--execute` is supplied; release maintenance invokes the bounded policy after its backup step; operational status is recorded in the implementation plan. See [release operation](DEPLOYMENT.md) for exact boundaries, commands and backups.

@@ -1,3 +1,4 @@
+import type { V3Bootstrap } from "./v3";
 export type Tile = { id: string; symbol: string; label: string };
 export type ScreenBase = {
   id: string; title: string; description: string; enabled: boolean;
@@ -41,6 +42,7 @@ export type Run = {
 export type Deletion = { deleted: true };
 export type Experiment = { id: string; variant: "A" | "B" };
 export type Bootstrap = { experiment: Experiment; configuration_version: string; configuration: Configuration; run: Run | null };
+export type ConsumerBootstrap = Bootstrap | V3Bootstrap;
 export async function api<T>(path: string, data?: unknown, signal?: AbortSignal): Promise<T> {
   const token = document.cookie
     .split("; ")

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Funnel\Answer;
 use App\Funnel\Configuration;
+use App\Funnel\V3State;
 use App\Funnel\VisitorContext;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -29,15 +31,22 @@ class FunnelController extends Controller
 
     private function state(object $run): array
     {
-        return [
+        $configuration = json_decode($this->version($run->funnel_version_id)->configuration, true);
+        $result = $run->result ? json_decode($run->result, true) : null;
+        $state = [
             'id' => $run->id, 'configuration_version' => $run->funnel_version_id,
-            'configuration' => json_decode($this->version($run->funnel_version_id)->configuration, true),
+            'configuration' => $configuration,
             'current_step' => $run->current_step,
             'completed_steps' => array_keys(json_decode($run->answers, true)),
             'answers' => (object) json_decode($run->answers, true),
             'demo_completed' => $run->current_step === 'done',
-            'result' => $run->result ? json_decode($run->result, true) : null,
+            'result' => Configuration::v3($configuration) ? null : $result,
         ];
+        if (Configuration::v3($configuration)) {
+            $state = array_merge($state, ['started_at' => Carbon::parse($run->created_at)->utc()->toIso8601String()], V3State::publicState($result));
+        }
+
+        return $state;
     }
 
     private function owned(Request $request, string $id, bool $lock = false): object
@@ -58,24 +67,33 @@ class FunnelController extends Controller
 
     public function bootstrap(Request $request)
     {
-        $context = VisitorContext::capture($request, $request->only(VisitorContext::UTM));
-        $version = $this->version();
-        $request->session()->put('landing_version', $version->id);
         $run = DB::table('funnel_runs')->where('visitor_id', $this->visitor($request))->first();
+        $version = $this->version($run?->funnel_version_id);
+        $configuration = json_decode($version->configuration, true);
+        $context = VisitorContext::capture($request, $request->only(VisitorContext::UTM), ! Configuration::v3($configuration));
+        if (Configuration::v3($configuration)) {
+            $request->session()->forget('landing_version');
+        } else {
+            $request->session()->put('landing_version', $version->id);
+        }
         if ($run) {
             DB::table('funnel_runs')->where('id', $run->id)->update(['updated_at' => now()]);
         }
 
-        return response()->json(['experiment' => ['id' => $context['experiment_id'], 'variant' => $context['variant']], 'configuration_version' => $version->id, 'configuration' => json_decode($version->configuration, true), 'run' => $run ? $this->state($run) : null]);
+        $experimentId = Configuration::v3($configuration) ? null : ($run?->experiment_id ?? $context['experiment_id']);
+        $variant = $run?->variant ?? $context['variant'];
+
+        return response()->json(['experiment' => $experimentId ? ['id' => $experimentId, 'variant' => $variant] : null, 'configuration_version' => $version->id, 'configuration' => $configuration, 'run' => $run ? $this->state($run) : null]);
     }
 
     public function start(Request $request)
     {
         $request->validate(['attribution' => ['sometimes', 'array']]);
         abort_if(array_diff(array_keys($request->all()), ['attribution']), 422, 'Only attribution is accepted.');
-        $context = VisitorContext::capture($request, $request->input('attribution', []));
-        $state = DB::transaction(function () use ($request, $context) {
-            $version = $this->version();
+        $existing = DB::table('funnel_runs')->where('visitor_id', $this->visitor($request))->first();
+        $version = $this->version($existing?->funnel_version_id);
+        $context = VisitorContext::capture($request, $request->input('attribution', []), ! Configuration::v3(json_decode($version->configuration, true)));
+        $state = DB::transaction(function () use ($request, $context, $version) {
             $visitor = $this->visitor($request);
             $id = (string) Str::uuid();
             $inserted = DB::table('funnel_runs')->insertOrIgnore([
@@ -99,18 +117,20 @@ class FunnelController extends Controller
         abort_if(array_diff(array_keys($request->all()), ['event_id', 'name', 'run_id', 'step_id', 'properties']), 422, 'Unexpected event fields.');
         $data = $request->validate([
             'event_id' => ['required', 'uuid'],
-            'name' => ['required', 'in:landing_viewed,step_viewed,result_viewed,paywall_reached'],
+            'name' => ['required', 'in:landing_viewed,step_viewed,result_viewed,paywall_reached,paywall_viewed_v3,checkout_viewed_v3,report_viewed_v3'],
             'run_id' => ['nullable', 'uuid'], 'step_id' => ['nullable', 'string', 'max:40'],
             'properties' => ['sometimes', 'array:surface'],
             'properties.surface' => ['sometimes', 'in:page'],
         ]);
-        $context = VisitorContext::capture($request);
         $step = $data['step_id'] ?? '';
         $runId = $data['run_id'] ?? null;
         if ($data['name'] === 'landing_viewed') {
             abort_if($runId || $step !== '', 422, 'Landing views cannot reference a run or step.');
-            $context['funnel_version_id'] = $request->session()->get('landing_version');
-            abort_unless($context['funnel_version_id'], 409, 'Initialize the page first.');
+            $landingVersion = $request->session()->get('landing_version');
+            abort_unless($landingVersion, 409, 'Initialize the page first.');
+            abort_if(Configuration::v3(json_decode($this->version($landingVersion)->configuration, true)), 422, 'This configuration has no landing screen.');
+            $context = VisitorContext::capture($request);
+            $context['funnel_version_id'] = $landingVersion;
             $key = 'landing:'.$context['visitor_id'].':'.$context['experiment_id'];
         } else {
             abort_unless($runId && $step, 422, 'A run and screen are required.');
@@ -122,12 +142,21 @@ class FunnelController extends Controller
             }
             $answers = json_decode($run->answers, true);
             abort_unless($screen && ($run->current_step === $step || array_key_exists($step, $answers)), 409, 'This screen is not available yet.');
-            $expected = match ($screen['type']) {
-                'result' => 'result_viewed', 'boundary' => 'paywall_reached', default => 'step_viewed'
-            };
-            abort_unless($data['name'] === $expected, 422, 'Event does not match the screen.');
+            if (Configuration::v3($configuration)) {
+                $allowed = ['step_viewed'];
+                if ($screen['type'] === 'paywall') { $allowed = [...$allowed, 'paywall_viewed_v3', 'checkout_viewed_v3']; }
+                if ($screen['type'] === 'final' && (V3State::publicState($run->result ? json_decode($run->result, true) : null)['commerce']['unlocked'])) {
+                    $allowed[] = 'report_viewed_v3';
+                }
+                abort_unless(in_array($data['name'], $allowed, true), 422, 'Event does not match the screen.');
+            } else {
+                $expected = match ($screen['type']) {
+                    'result' => 'result_viewed', 'boundary' => 'paywall_reached', default => 'step_viewed'
+                };
+                abort_unless($data['name'] === $expected, 422, 'Event does not match the screen.');
+            }
             $context = VisitorContext::run($run);
-            $key = 'view:'.$runId.':'.$step;
+            $key = Configuration::v3($configuration) ? 'view:'.$data['name'].':'.$runId.':'.$step : 'view:'.$runId.':'.$step;
         }
         DB::table('events')->insertOrIgnore(array_merge($context, [
             'run_id' => $runId, 'name' => $data['name'], 'step_id' => $step,
@@ -158,7 +187,7 @@ class FunnelController extends Controller
             $answer = Answer::validate($request, $screen);
             $answers = json_decode($record->answers, true);
             if (array_key_exists($step, $answers)) {
-                if ($answers[$step] !== $answer) {
+                if (Answer::canonical($answers[$step]) !== $answer) {
                     throw new HttpException(409, 'This answer is already saved. Reload to restore your progress.');
                 }
 
@@ -171,6 +200,9 @@ class FunnelController extends Controller
             $next = Configuration::next($configuration, $screen, $answer);
             $quizCompleted = Configuration::legacy($configuration) || (Configuration::screen($configuration, $next)['type'] ?? null) === 'result';
             $result = $record->result ? json_decode($record->result, true) : null;
+            if (Configuration::v3($configuration)) {
+                $result = V3State::advance($configuration, $screen, $answer, $next, $result);
+            }
             if ($quizCompleted && ! $result) {
                 $result = [
                     'kind' => 'illustrative_demo',
@@ -190,7 +222,11 @@ class FunnelController extends Controller
             if ($quizCompleted) {
                 $this->event($run, 'quiz_completed');
             }
-            if ($next === 'done') {
+            if (Configuration::v3($configuration)) {
+                foreach (V3State::milestones($screen, $next, $configuration) as $name) {
+                    $this->event($run, $name, $step);
+                }
+            } elseif ($next === 'done') {
                 $this->event($run, 'demo_completed');
             }
 

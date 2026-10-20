@@ -7,7 +7,7 @@ export function campaign() {
 }
 
 type ViewEvent = {
-  name: "landing_viewed" | "step_viewed" | "result_viewed" | "paywall_reached";
+  name: "landing_viewed" | "step_viewed" | "result_viewed" | "paywall_reached" | "paywall_viewed_v3" | "checkout_viewed_v3" | "report_viewed_v3";
   run_id?: string; step_id?: string;
 };
 // Small in-memory outbox; no URLs, cookies, answers or persistent browser identifiers.

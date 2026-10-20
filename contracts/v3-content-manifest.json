@@ -1,0 +1,535 @@
+{
+  "version": 3,
+  "reference_positions": [
+    {
+      "position": 0,
+      "id": "remember-word",
+      "type": "word_intro"
+    },
+    {
+      "position": 1,
+      "id": "verbal-analogy",
+      "type": "single_choice"
+    },
+    {
+      "position": 2,
+      "id": "arithmetic",
+      "type": "single_choice"
+    },
+    {
+      "position": 3,
+      "id": "reasoning",
+      "type": "single_choice"
+    },
+    {
+      "position": 4,
+      "id": "learning-preference",
+      "type": "scale"
+    },
+    {
+      "position": 5,
+      "id": "sequence-double",
+      "type": "single_choice"
+    },
+    {
+      "position": 6,
+      "id": "digits-five",
+      "type": "timed_reveal"
+    },
+    {
+      "position": 7,
+      "id": "recall-five",
+      "type": "single_choice"
+    },
+    {
+      "position": 8,
+      "id": "sequence-differences",
+      "type": "single_choice"
+    },
+    {
+      "position": 9,
+      "id": "digits-six",
+      "type": "timed_reveal"
+    },
+    {
+      "position": 10,
+      "id": "recall-six",
+      "type": "single_choice"
+    },
+    {
+      "position": 11,
+      "id": "digits-seven",
+      "type": "timed_reveal"
+    },
+    {
+      "position": 12,
+      "id": "recall-seven",
+      "type": "single_choice"
+    },
+    {
+      "position": 13,
+      "id": "spatial-confidence",
+      "type": "scale"
+    },
+    {
+      "position": 14,
+      "id": "visual-rotation",
+      "type": "single_choice"
+    },
+    {
+      "position": 15,
+      "id": "pace-break",
+      "type": "interstitial"
+    },
+    {
+      "position": 16,
+      "id": "visual-growing-dots",
+      "type": "single_choice"
+    },
+    {
+      "position": 17,
+      "id": "visual-alternating-fill",
+      "type": "single_choice"
+    },
+    {
+      "position": 18,
+      "id": "visual-moving-corner",
+      "type": "single_choice"
+    },
+    {
+      "position": 19,
+      "id": "object-classification",
+      "type": "single_choice"
+    },
+    {
+      "position": 20,
+      "id": "visual-nested-shapes",
+      "type": "single_choice"
+    },
+    {
+      "position": 21,
+      "id": "visual-arrow-cycle",
+      "type": "single_choice"
+    },
+    {
+      "position": 22,
+      "id": "visual-line-addition",
+      "type": "single_choice"
+    },
+    {
+      "position": 23,
+      "id": "category-classification",
+      "type": "single_choice"
+    },
+    {
+      "position": 24,
+      "id": "visual-mirror",
+      "type": "single_choice"
+    },
+    {
+      "position": 25,
+      "id": "visual-shape-subtraction",
+      "type": "single_choice"
+    },
+    {
+      "position": 26,
+      "id": "visual-matrix-count",
+      "type": "single_choice"
+    },
+    {
+      "position": 27,
+      "id": "visual-polygon-growth",
+      "type": "single_choice"
+    },
+    {
+      "position": 28,
+      "id": "landmark",
+      "type": "single_choice"
+    },
+    {
+      "position": 29,
+      "id": "encouragement",
+      "type": "interstitial"
+    },
+    {
+      "position": 30,
+      "id": "visual-folded-paper",
+      "type": "single_choice"
+    },
+    {
+      "position": 31,
+      "id": "recall-word",
+      "type": "single_choice"
+    },
+    {
+      "position": 32,
+      "id": "visual-overlap",
+      "type": "single_choice"
+    },
+    {
+      "position": 33,
+      "id": "visual-size-rhythm",
+      "type": "single_choice"
+    },
+    {
+      "position": 34,
+      "id": "visual-diagonal-motion",
+      "type": "single_choice"
+    },
+    {
+      "position": 35,
+      "id": "visual-sector-turn",
+      "type": "single_choice"
+    },
+    {
+      "position": 36,
+      "id": "visual-balance",
+      "type": "single_choice"
+    },
+    {
+      "position": 37,
+      "id": "visual-cube-net",
+      "type": "single_choice"
+    },
+    {
+      "position": 38,
+      "id": "emerging-profile",
+      "type": "interstitial"
+    },
+    {
+      "position": 39,
+      "id": "visual-path",
+      "type": "single_choice"
+    },
+    {
+      "position": 40,
+      "id": "visual-symmetry",
+      "type": "single_choice"
+    },
+    {
+      "position": 41,
+      "id": "visual-tile-composition",
+      "type": "single_choice"
+    },
+    {
+      "position": 42,
+      "id": "visual-two-rules",
+      "type": "single_choice"
+    },
+    {
+      "position": 43,
+      "id": "nearly-there",
+      "type": "interstitial"
+    },
+    {
+      "position": 44,
+      "id": "visual-final-matrix",
+      "type": "single_choice"
+    },
+    {
+      "position": 45,
+      "id": "attitude-challenge",
+      "type": "scale"
+    },
+    {
+      "position": 46,
+      "id": "self-comparison",
+      "type": "scale"
+    },
+    {
+      "position": 47,
+      "id": "age-bracket",
+      "type": "single_choice"
+    },
+    {
+      "position": 48,
+      "id": "education",
+      "type": "single_choice"
+    },
+    {
+      "position": 49,
+      "id": "confirm-answers",
+      "type": "confirmation"
+    },
+    {
+      "position": 50,
+      "id": "community",
+      "type": "interstitial"
+    },
+    {
+      "position": 51,
+      "id": "prepare-report",
+      "type": "processing"
+    },
+    {
+      "position": 52,
+      "id": "report-email",
+      "type": "email"
+    },
+    {
+      "position": 53,
+      "id": "prepare-profile",
+      "type": "processing"
+    },
+    {
+      "position": 54,
+      "id": "report-offer",
+      "type": "paywall"
+    },
+    {
+      "position": 55,
+      "id": "guide-offer",
+      "type": "upsell"
+    },
+    {
+      "position": 56,
+      "id": "guide-finish",
+      "type": "final"
+    },
+    {
+      "position": 57,
+      "id": "report-finish",
+      "type": "final"
+    }
+  ],
+  "visuals": [
+    {
+      "id": "rotation",
+      "prompt": "/v3/rotation.svg",
+      "options": [
+        "/v3/rotation-1.svg",
+        "/v3/rotation-2.svg",
+        "/v3/rotation-3.svg",
+        "/v3/rotation-4.svg"
+      ]
+    },
+    {
+      "id": "growing-dots",
+      "prompt": "/v3/growing-dots.svg",
+      "options": [
+        "/v3/growing-dots-1.svg",
+        "/v3/growing-dots-2.svg",
+        "/v3/growing-dots-3.svg",
+        "/v3/growing-dots-4.svg"
+      ]
+    },
+    {
+      "id": "alternating-fill",
+      "prompt": "/v3/alternating-fill.svg",
+      "options": [
+        "/v3/alternating-fill-1.svg",
+        "/v3/alternating-fill-2.svg",
+        "/v3/alternating-fill-3.svg",
+        "/v3/alternating-fill-4.svg"
+      ]
+    },
+    {
+      "id": "moving-corner",
+      "prompt": "/v3/moving-corner.svg",
+      "options": [
+        "/v3/moving-corner-1.svg",
+        "/v3/moving-corner-2.svg",
+        "/v3/moving-corner-3.svg",
+        "/v3/moving-corner-4.svg"
+      ]
+    },
+    {
+      "id": "nested-shapes",
+      "prompt": "/v3/nested-shapes.svg",
+      "options": [
+        "/v3/nested-shapes-1.svg",
+        "/v3/nested-shapes-2.svg",
+        "/v3/nested-shapes-3.svg",
+        "/v3/nested-shapes-4.svg"
+      ]
+    },
+    {
+      "id": "arrow-cycle",
+      "prompt": "/v3/arrow-cycle.svg",
+      "options": [
+        "/v3/arrow-cycle-1.svg",
+        "/v3/arrow-cycle-2.svg",
+        "/v3/arrow-cycle-3.svg",
+        "/v3/arrow-cycle-4.svg"
+      ]
+    },
+    {
+      "id": "line-addition",
+      "prompt": "/v3/line-addition.svg",
+      "options": [
+        "/v3/line-addition-1.svg",
+        "/v3/line-addition-2.svg",
+        "/v3/line-addition-3.svg",
+        "/v3/line-addition-4.svg"
+      ]
+    },
+    {
+      "id": "mirror",
+      "prompt": "/v3/mirror.svg",
+      "options": [
+        "/v3/mirror-1.svg",
+        "/v3/mirror-2.svg",
+        "/v3/mirror-3.svg",
+        "/v3/mirror-4.svg"
+      ]
+    },
+    {
+      "id": "shape-subtraction",
+      "prompt": "/v3/shape-subtraction.svg",
+      "options": [
+        "/v3/shape-subtraction-1.svg",
+        "/v3/shape-subtraction-2.svg",
+        "/v3/shape-subtraction-3.svg",
+        "/v3/shape-subtraction-4.svg"
+      ]
+    },
+    {
+      "id": "matrix-count",
+      "prompt": "/v3/matrix-count.svg",
+      "options": [
+        "/v3/matrix-count-1.svg",
+        "/v3/matrix-count-2.svg",
+        "/v3/matrix-count-3.svg",
+        "/v3/matrix-count-4.svg"
+      ]
+    },
+    {
+      "id": "polygon-growth",
+      "prompt": "/v3/polygon-growth.svg",
+      "options": [
+        "/v3/polygon-growth-1.svg",
+        "/v3/polygon-growth-2.svg",
+        "/v3/polygon-growth-3.svg",
+        "/v3/polygon-growth-4.svg"
+      ]
+    },
+    {
+      "id": "folded-paper",
+      "prompt": "/v3/folded-paper.svg",
+      "options": [
+        "/v3/folded-paper-1.svg",
+        "/v3/folded-paper-2.svg",
+        "/v3/folded-paper-3.svg",
+        "/v3/folded-paper-4.svg"
+      ]
+    },
+    {
+      "id": "overlap",
+      "prompt": "/v3/overlap.svg",
+      "options": [
+        "/v3/overlap-1.svg",
+        "/v3/overlap-2.svg",
+        "/v3/overlap-3.svg",
+        "/v3/overlap-4.svg"
+      ]
+    },
+    {
+      "id": "size-rhythm",
+      "prompt": "/v3/size-rhythm.svg",
+      "options": [
+        "/v3/size-rhythm-1.svg",
+        "/v3/size-rhythm-2.svg",
+        "/v3/size-rhythm-3.svg",
+        "/v3/size-rhythm-4.svg"
+      ]
+    },
+    {
+      "id": "diagonal-motion",
+      "prompt": "/v3/diagonal-motion.svg",
+      "options": [
+        "/v3/diagonal-motion-1.svg",
+        "/v3/diagonal-motion-2.svg",
+        "/v3/diagonal-motion-3.svg",
+        "/v3/diagonal-motion-4.svg"
+      ]
+    },
+    {
+      "id": "sector-turn",
+      "prompt": "/v3/sector-turn.svg",
+      "options": [
+        "/v3/sector-turn-1.svg",
+        "/v3/sector-turn-2.svg",
+        "/v3/sector-turn-3.svg",
+        "/v3/sector-turn-4.svg"
+      ]
+    },
+    {
+      "id": "balance",
+      "prompt": "/v3/balance.svg",
+      "options": [
+        "/v3/balance-1.svg",
+        "/v3/balance-2.svg",
+        "/v3/balance-3.svg",
+        "/v3/balance-4.svg"
+      ]
+    },
+    {
+      "id": "cube-net",
+      "prompt": "/v3/cube-net.svg",
+      "options": [
+        "/v3/cube-net-1.svg",
+        "/v3/cube-net-2.svg",
+        "/v3/cube-net-3.svg",
+        "/v3/cube-net-4.svg"
+      ]
+    },
+    {
+      "id": "path",
+      "prompt": "/v3/path.svg",
+      "options": [
+        "/v3/path-1.svg",
+        "/v3/path-2.svg",
+        "/v3/path-3.svg",
+        "/v3/path-4.svg"
+      ]
+    },
+    {
+      "id": "symmetry",
+      "prompt": "/v3/symmetry.svg",
+      "options": [
+        "/v3/symmetry-1.svg",
+        "/v3/symmetry-2.svg",
+        "/v3/symmetry-3.svg",
+        "/v3/symmetry-4.svg"
+      ]
+    },
+    {
+      "id": "tile-composition",
+      "prompt": "/v3/tile-composition.svg",
+      "options": [
+        "/v3/tile-composition-1.svg",
+        "/v3/tile-composition-2.svg",
+        "/v3/tile-composition-3.svg",
+        "/v3/tile-composition-4.svg"
+      ]
+    },
+    {
+      "id": "two-rules",
+      "prompt": "/v3/two-rules.svg",
+      "options": [
+        "/v3/two-rules-1.svg",
+        "/v3/two-rules-2.svg",
+        "/v3/two-rules-3.svg",
+        "/v3/two-rules-4.svg"
+      ]
+    },
+    {
+      "id": "final-matrix",
+      "prompt": "/v3/final-matrix.svg",
+      "options": [
+        "/v3/final-matrix-1.svg",
+        "/v3/final-matrix-2.svg",
+        "/v3/final-matrix-3.svg",
+        "/v3/final-matrix-4.svg"
+      ]
+    }
+  ],
+  "supporting": [
+    "/v3/landmark.svg",
+    "/v3/community.svg",
+    "/v3/report-hero.svg",
+    "/v3/report-preview.svg",
+    "/v3/guide-cover.svg"
+  ],
+  "ownership": "Original locally authored SVG artwork; no remote reference assets."
+}

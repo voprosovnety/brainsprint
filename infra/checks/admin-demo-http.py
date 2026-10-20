@@ -56,7 +56,7 @@ for origin in [web, api]:
     status, body, _, headers = request(origin, '/api/v1/demo-analytics')
     result = json.loads(body)
     assert status == 200 and result['dataset'] == 'synthetic' and 'no-store' in headers['Cache-Control']
-    assert set(result) == {'dataset', 'cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment'}
+    assert set(result) == {'dataset', 'cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment', 'v3'}
     for query in ['dataset=real', 'dataset=all', 'from=1900-01-01', 'run_id=private', 'sql=select']:
         assert request(origin, '/api/v1/demo-analytics?' + query)[0] == 422
 for path in ['/api/admin', '/api/v1/admin', '/api/v1/admin/runs']:

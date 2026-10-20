@@ -25,9 +25,10 @@ BrainSprint is a mobile-first cognitive challenge demo. Follow `docs/ARCHITECTUR
 - Never commit credentials, real `.env` files, session secrets, or raw cookies. Environment examples contain placeholders only; public responses must not expose secrets or administrative credentials.
 
 ## Verification
-- Run relevant automated checks for code changes, covering persistence, transitions, ownership, event deduplication, and stable experiment assignment where affected.
-- Verify significant UI changes in a real browser at mobile and desktop sizes. Check layout, typography, accessibility, motion, and interaction states; fix issues before considering the work complete.
-- Use independent review for complex changes. Report what ran and disclose failed, blocked, or incomplete checks.
+- Follow the user’s explicit verification budget: do not run executable checks, startup or browser inspection unless requested. The current redesign authorization covers implementation and final diff review only. Disclose unrun checks.
+- When verification is requested, run relevant automated checks for code changes, covering persistence, transitions, ownership, event deduplication, and stable experiment assignment where affected.
+- When UI verification is requested, verify significant UI changes in a real browser at mobile and desktop sizes. Check layout, typography, accessibility, motion, and interaction states; fix issues before considering the work complete.
+- Use independent review for complex changes only when authorized. Report what ran and disclose failed, blocked, or incomplete checks.
 - Use screenshots and browser traces as needed for visual testing. Do not commit unnecessary temporary artifacts to Git.
 
 ## Documentation

@@ -13,6 +13,11 @@ class Configuration
         return ! isset($config['schema_version']);
     }
 
+    public static function v3(array $config): bool
+    {
+        return ($config['schema_version'] ?? null) === 3;
+    }
+
     public static function screen(array $config, string $id): ?array
     {
         return collect($config['steps'])->firstWhere('id', $id);
@@ -38,6 +43,9 @@ class Configuration
             return 'result';
         }
         $target = $screen['next'];
+        if (self::v3($config) && $screen['type'] === 'upsell' && $answer['decision'] === 'decline') {
+            $target = $screen['decline_next'];
+        }
         if (isset($screen['branch'])) {
             $expected = $screen['pattern'];
             sort($expected);
@@ -51,6 +59,11 @@ class Configuration
 
     public static function validate(array $config): void
     {
+        if (self::v3($config)) {
+            V3Configuration::validate($config);
+
+            return;
+        }
         $types = ['onboarding', 'tutorial', 'explanation', 'visual_memory', 'pattern', 'logic', 'result', 'boundary'];
         Validator::make($config, [
             'schema_version' => ['required', Rule::in([2])],

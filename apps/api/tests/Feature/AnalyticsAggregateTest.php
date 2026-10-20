@@ -6,7 +6,7 @@ use App\Analytics\AggregateService;
 use App\Analytics\Dataset;
 use App\Funnel\VisitorContext;
 use Carbon\CarbonImmutable as Time;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Fixtures\LegacyFunnelSeeder as DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

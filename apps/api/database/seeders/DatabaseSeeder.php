@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $source = file_get_contents(resource_path('funnel/brainsprint-v2.json'));
+        $source = file_get_contents(resource_path('funnel/brainsprint-v3.json'));
         Configuration::validate(json_decode($source, true, flags: JSON_THROW_ON_ERROR));
         $id = 'brainsprint-'.substr(hash('sha256', $source), 0, 12);
         // Publishing inserts a new content-addressed version; existing versions never change.

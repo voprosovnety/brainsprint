@@ -7,3 +7,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+V3 dispatches by the owned run’s pinned schema before latest publication. Keep legacy presentation isolated, direct v3 entry, local original SVGs and server-confirmed navigation. Full report visibility follows the API, not CSS. Checkout placeholders must remain inert and collect no financial data. Follow the explicit user budget: no executable or browser checks unless requested.

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./v3.css";
+import "./v3-commerce.css";
 export const metadata: Metadata = {
-  title: "BrainSprint — A little space for your mind",
+  title: "BrainSprint — A fresh perspective",
   description:
-    "A playful detour through memory, patterns and logic. A little space for a curious mind. An entertainment demo, not a cognitive assessment.",
+    "A journey through words, numbers and shapes. Explore your curiosity and a fresh perspective on everyday thinking.",
 };
 export default function RootLayout({
   children,

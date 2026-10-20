@@ -16,6 +16,6 @@ class DemoAnalyticsController extends Controller
         $asOf = CarbonImmutable::now('UTC');
         $summary = $service->summarize($asOf->subDays(7), $asOf, $asOf, Dataset::Synthetic, 24);
 
-        return response()->json(collect($summary)->only(['dataset', 'cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment'])->all());
+        return response()->json(collect($summary)->only(['dataset', 'cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment', 'v3'])->all());
     }
 }

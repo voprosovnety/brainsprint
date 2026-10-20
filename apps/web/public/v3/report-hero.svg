@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="440" viewBox="0 0 640 440" fill="none">
+  <title>A fresh perspective</title>
+  <desc>An original illustration of a profile booklet and a winding lavender path through shapes representing attention, memory and reasoning.</desc>
+  <defs>
+    <linearGradient id="paper" x1="163" y1="128" x2="428" y2="354" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#F2F3FA"/></linearGradient>
+    <linearGradient id="violet" x1="182" y1="145" x2="362" y2="352" gradientUnits="userSpaceOnUse"><stop stop-color="#A6AEFF"/><stop offset="1" stop-color="#7E8AF7"/></linearGradient>
+    <filter id="shadow" x="90" y="48" width="450" height="382" filterUnits="userSpaceOnUse"><feDropShadow dy="14" stdDeviation="13" flood-color="#424977" flood-opacity=".1"/></filter>
+  </defs>
+  <ellipse cx="323" cy="367" rx="202" ry="20" fill="#E7E9F2"/>
+  <path d="M74 255C47 211 106 170 153 204C205 243 191 299 256 310C327 322 337 281 414 280C479 278 491 224 534 232C584 242 580 310 538 330" stroke="#DCE0F6" stroke-width="15" stroke-linecap="round"/>
+  <path d="M75 255C47 211 106 170 153 204C205 243 191 299 256 310C327 322 337 281 414 280C479 278 491 224 534 232C584 242 580 310 538 330" stroke="#ADB6EE" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 8"/>
+  <g filter="url(#shadow)" transform="rotate(-8 315 219)">
+    <rect x="158" y="93" width="310" height="264" rx="13" fill="#E0E4F8"/>
+    <path d="M163 111C163 101 172 96 182 98L310 119L438 99C450 97 460 104 460 116V339C460 348 454 354 445 353L310 337L177 354C169 355 163 350 163 342V111Z" fill="url(#paper)" stroke="#D2D7EA"/>
+    <path d="M310 121V337" stroke="#D8DDF0"/>
+    <path d="M181 119L292 135V317L181 333V119Z" fill="url(#violet)"/>
+    <path d="M208 263C187 247 201 219 218 225C205 204 224 187 241 197C251 180 277 193 270 212C291 219 285 248 270 247C275 267 246 277 234 261C224 276 207 271 208 263Z" stroke="#E9EBFF" stroke-width="3"/>
+    <path d="M238 202V260M216 228L238 240L264 220M238 240L263 251" stroke="#E9EBFF" stroke-width="2" stroke-linecap="round"/>
+    <text x="194" y="157" fill="#fff" font-family="Georgia,serif" font-size="15">Your thinking</text>
+    <text x="194" y="176" fill="#fff" font-family="Georgia,serif" font-size="15">profile</text>
+    <text x="193" y="305" fill="#F2F3FF" font-family="Arial,sans-serif" font-size="7" letter-spacing="1.7">BRAINSPRINT</text>
+    <text x="329" y="150" fill="#41465E" font-family="Georgia,serif" font-size="16">A little more</text><text x="329" y="169" fill="#41465E" font-family="Georgia,serif" font-size="16">perspective.</text>
+    <rect x="329" y="188" width="105" height="3" rx="1.5" fill="#D7DBEB"/><rect x="329" y="199" width="91" height="3" rx="1.5" fill="#E3E6EF"/><rect x="329" y="210" width="101" height="3" rx="1.5" fill="#E3E6EF"/>
+    <rect x="329" y="234" width="106" height="51" rx="6" fill="#EDF0FC"/>
+    <path d="M339 267L355 252L370 261L386 244L402 255L424 243" stroke="#8A96DF" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="355" cy="252" r="3" fill="#AAB4F1"/><circle cx="386" cy="244" r="3" fill="#AAB4F1"/>
+    <rect x="329" y="302" width="104" height="3" rx="1.5" fill="#DFE3EE"/><rect x="329" y="313" width="83" height="3" rx="1.5" fill="#DFE3EE"/>
+    <path d="M416 101V141L426 134L436 138V100" fill="#BAC3F7"/>
+  </g>
+  <g transform="rotate(12 506 167)"><rect x="463" y="122" width="78" height="85" rx="15" fill="#fff" stroke="#E0E3EF"/><rect x="478" y="139" width="18" height="18" rx="3" fill="#ADB8FA"/><rect x="504" y="139" width="18" height="18" rx="3" fill="#E1E6FA"/><rect x="478" y="165" width="18" height="18" rx="3" fill="#E1E6FA"/><rect x="504" y="165" width="18" height="18" rx="3" fill="#ADB8FA"/></g>
+  <g transform="rotate(-14 113 141)"><rect x="81" y="109" width="66" height="66" rx="33" fill="#E4E7F9"/><circle cx="114" cy="142" r="18" stroke="#8996DC" stroke-width="2"/><circle cx="114" cy="142" r="8" stroke="#8996DC" stroke-width="2"/><circle cx="114" cy="142" r="2" fill="#8996DC"/></g>
+  <path d="M129 316V365M129 338C105 337 103 322 104 316C118 315 129 324 129 338ZM130 352C151 349 156 334 154 330C139 330 129 339 130 352Z" stroke="#9BAAA7" stroke-width="2" fill="#D4E0D9"/>
+  <path d="M491 327V366M491 346C477 344 473 335 474 329C485 330 491 335 491 346ZM492 355C504 352 511 344 509 337C497 338 492 345 492 355Z" stroke="#9BAAA7" stroke-width="2" fill="#D4E0D9"/>
+  <path d="M411 62L414 71L423 74L414 77L411 86L408 77L399 74L408 71Z" fill="#B4BDF2"/><path d="M555 196L557 202L563 204L557 206L555 212L553 206L547 204L553 202Z" fill="#B4BDF2"/>
+  <circle cx="98" cy="291" r="3" fill="#B9C2EC"/><circle cx="483" cy="87" r="3" fill="#D0D6EF"/><circle cx="211" cy="64" r="3" fill="#D0D6EF"/>
+</svg>

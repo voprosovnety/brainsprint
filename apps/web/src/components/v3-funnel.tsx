@@ -1,0 +1,140 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { api } from "@/lib/api";
+import { campaign, recordView } from "@/lib/analytics";
+import type { V3Answer, V3Bootstrap, V3Run, V3Screen } from "@/lib/v3";
+import { Privacy } from "./privacy";
+import { V3Quiz } from "./v3-quiz";
+import { V3Commerce } from "./v3-commerce";
+
+function allowed(run: V3Run, id: string) {
+  return id === run.current_step || run.completed_steps.includes(id);
+}
+function requested(run: V3Run) {
+  const id = new URLSearchParams(window.location.search).get("screen");
+  return id && allowed(run, id) ? id : run.current_step;
+}
+function finalScreen(run: V3Run) {
+  return run.configuration.steps.find(s => s.type === "final" && !!s.guide === (run.commerce.upsell === "accept"));
+}
+function elapsed(started: string | undefined, now: number) {
+  const seconds = started ? Math.max(0, Math.floor((now - Date.parse(started)) / 1000)) : 0;
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
+export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
+  const [run, setRun] = useState<V3Run | null>(initial.run);
+  const [view, setView] = useState(initial.run?.current_step || initial.configuration.entry);
+  const [busy, setBusy] = useState(!initial.run);
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState<{ step: string; answer: V3Answer } | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [deleted, setDeleted] = useState(false);
+  const initialized = useRef(false);
+  const writing = useRef(false);
+  const runRef = useRef(initial.run);
+  const viewRef = useRef(view);
+  const headingRegion = useRef<HTMLDivElement>(null);
+  const errorRegion = useRef<HTMLDivElement>(null);
+  function show(id: string, replace = false) {
+    viewRef.current = id; setView(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("screen", id);
+    if (replace) window.history.replaceState(null, "", url);
+    else window.history.pushState(null, "", url);
+  }
+  function accept(value: V3Run) { runRef.current = value; setRun(value); }
+  async function start() {
+    if (writing.current) return;
+    writing.current = true; setBusy(true); setError("");
+    try {
+      const value = await api<V3Run>("runs", { attribution: campaign() });
+      accept(value); show(requested(value), true);
+    } catch (e) { setError((e as Error).message || "Your challenge could not start. Please try again."); }
+    finally { writing.current = false; setBusy(false); }
+  }
+  async function restore() {
+    if (writing.current) return;
+    writing.current = true; setBusy(true); setError("");
+    try {
+      const value = await api<V3Bootstrap>("bootstrap");
+      if (value.run) { accept(value.run); setPending(null); show(value.run.current_step, true); }
+      else window.location.replace("/");
+    } catch (e) { setError((e as Error).message || "Your progress could not be restored. Please try again."); }
+    finally { writing.current = false; setBusy(false); }
+  }
+  async function save(answer: V3Answer, step = viewRef.current) {
+    const current = runRef.current;
+    if (!current || writing.current || current.demo_completed || step !== current.current_step) return;
+    writing.current = true; setBusy(true); setError(""); setPending({ step, answer });
+    try {
+      const value = await api<V3Run>(`runs/${current.id}/steps/${encodeURIComponent(step)}/complete`, { answer });
+      accept(value); setPending(null);
+      if (viewRef.current === step) show(value.current_step);
+    } catch (e) { setError((e as Error).message || "Your answer could not be saved. Retry when you are connected."); }
+    finally { writing.current = false; setBusy(false); }
+  }
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    try { setDeleted(sessionStorage.getItem("brainsprint-data-deleted") === "1"); sessionStorage.removeItem("brainsprint-data-deleted"); } catch {}
+    if (initial.run) show(requested(initial.run), true);
+    else void start();
+    // Initialization is once per mounted visitor, including React strict effects.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    function pop() {
+      const current = runRef.current;
+      if (current) show(writing.current ? viewRef.current : requested(current), true);
+    }
+    window.addEventListener("popstate", pop);
+    return () => { clearInterval(interval); window.removeEventListener("popstate", pop); };
+  }, []);
+  useEffect(() => {
+    const heading = headingRegion.current?.querySelector<HTMLElement>("h1");
+    heading?.setAttribute("tabindex", "-1"); heading?.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }, [view]);
+  useEffect(() => { if (error) errorRegion.current?.focus(); }, [error]);
+  const config = run?.configuration || initial.configuration;
+  const screen = view === "done" && run ? finalScreen(run) : config.steps.find(s => s.id === view);
+  const saved = !!run && run.completed_steps.includes(view) && view !== "done";
+  const commercial = !!screen && ["paywall", "upsell", "final"].includes(screen.type) && (!saved || screen.type === "final");
+  const responses = config.steps.filter(s => s.enabled && ["single_choice", "scale"].includes(s.type));
+  const completed = responses.filter(s => run?.completed_steps.includes(s.id)).length;
+  const progress = responses.length ? Math.round(completed / responses.length * 100) : 0;
+  const locked = busy || !!pending || !run;
+  useEffect(() => {
+    if (!run || !screen) return;
+    let first = 0, second = 0;
+    function expose() {
+      if (document.visibilityState !== "visible") return;
+      first = requestAnimationFrame(() => { second = requestAnimationFrame(() => {
+        if (document.visibilityState !== "visible") return;
+        void recordView({ name: "step_viewed", run_id: run!.id, step_id: screen!.id });
+        if (screen!.type === "paywall" && !saved) void recordView({ name: "paywall_viewed_v3", run_id: run!.id, step_id: screen!.id });
+        if (screen!.type === "final" && run!.commerce.unlocked && run!.result) void recordView({ name: "report_viewed_v3", run_id: run!.id, step_id: screen!.id });
+      }); });
+    }
+    expose(); document.addEventListener("visibilitychange", expose);
+    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); document.removeEventListener("visibilitychange", expose); };
+    // Exposures track a painted view, not timer ticks or in-place saves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, run?.id]);
+  return <div className="v3-shell">
+    {!commercial && <header className="v3-header"><div className="v3-header-row"><a className="v3-brand" href="/" onClick={e => e.preventDefault()} aria-label="BrainSprint"><span className="v3-brand-icon" aria-hidden="true">✳</span>BrainSprint</a><span className="v3-timer" aria-label={`Elapsed time ${elapsed(run?.started_at, now)}`}><span aria-hidden="true">◷</span> {elapsed(run?.started_at, now)}</span></div><div className="v3-progress" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={responses.length} aria-valuenow={completed}><span style={{ width: `${progress}%` }} /></div></header>}
+    <main ref={headingRegion} className={commercial ? "v3-commerce-main" : "v3-main"}>
+      {deleted && <p className="v3-notice" role="status">Your saved data was deleted. This is a new anonymous visit.</p>}
+      {screen ? saved && screen.type !== "final" ? <SavedScreen screen={screen} run={run!} onContinue={() => show(run!.current_step)} /> : commercial && run ? <V3Commerce key={screen.id} screen={screen} run={run} busy={locked} onSubmit={answer => { void save(answer); }} /> : <V3Quiz key={screen.id} screen={screen} busy={locked} saving={busy} onSubmit={answer => { void save(answer); }} progress={progress} /> : <section className="v3-loading"><h1>Your saved progress is here.</h1><p>Restore your current screen to continue.</p><button className="v3-primary" disabled={busy} onClick={restore}>Restore progress</button></section>}
+      {error && <div className="v3-error" role="alert" tabIndex={-1} ref={errorRegion}><p>{error}</p>{pending && <p>Your selected answer is kept for an identical retry.</p>}<div><button className="v3-primary" disabled={busy} onClick={() => pending ? void save(pending.answer, pending.step) : run ? void restore() : void start()}>{busy ? "Saving…" : pending ? "Retry saving" : "Try again"}</button>{run && <button className="v3-text-button" disabled={busy} onClick={restore}>Restore saved progress</button>}</div></div>}
+      {run && !commercial && !pending && <nav className="v3-history" aria-label="Saved progress">{saved ? <button className="v3-text-button" disabled={busy} onClick={() => show(run.current_step)}>Return to current screen</button> : <span>{completed} of {responses.length} responses saved</span>}</nav>}
+    </main>
+    {!commercial && <><div className="v3-privacy"><Privacy locked={locked} /></div><footer className="v3-footer"><span>BrainSprint © 2026</span><a href="/demo-analytics">Sample analytics ↗</a></footer></>}
+  </div>;
+}
+function SavedScreen({ screen, run, onContinue }: { screen: V3Screen; run: V3Run; onContinue: () => void }) {
+  const answer = run.answers[screen.id];
+  const label = answer && "choice" in answer ? screen.options?.find(o => o.id === answer.choice)?.label : answer && "email" in answer ? answer.email ? "Email preference saved" : "Skipped" : answer && "decision" in answer ? answer.decision === "accept" ? "Guide added" : "Report only" : "Completed";
+  return <section className="v3-question v3-saved"><span className="v3-status-icon" aria-hidden="true">✓</span><p className="v3-eyebrow">Saved response</p><h1>{screen.title}</h1><p>{label}</p><p>Your confirmed answer is saved. Continue from where you left off.</p><div className="v3-actions"><button className="v3-primary" onClick={onContinue}>Continue my progress <span aria-hidden="true">→</span></button></div></section>;
+}

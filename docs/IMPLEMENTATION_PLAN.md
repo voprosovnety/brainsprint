@@ -1,57 +1,101 @@
 # BrainSprint implementation plan
 
-Approved scope: `ARCHITECTURE.md`. The coordinating chat owns this file; executors report status in their task brief and completion summary.
+Target scope: [ARCHITECTURE.md](ARCHITECTURE.md). Project/task statuses live exclusively here. The current request authorizes local implementation with coordinated independent agents. Application/configuration/contract changes are implemented locally; database contents and public deployment remain unchanged.
 
-## Current state
+## Hosting publication — 2026-10-21
 
-- The full local funnel, stable landing experiment, events, protected Filament, compact shared-service synthetic analytics, anonymous deletion/retention and production package are implemented. Accepted commits are recorded below.
-- Source: https://github.com/voprosovnety/brainsprint. GitHub API reports `private=false` on 2026-10-20; this deployment task has not changed repository visibility. Local web: http://127.0.0.1:3000; demo: /demo-analytics; admin: http://127.0.0.1:8008/admin; PostgreSQL loopback: 55432. Check service state and README startup instructions before use.
-- Release candidate `7361261` is accepted after local coordinator inspection of ownership/lifecycle transactions, retention scope, deliberate admin provisioning and deployment packaging, executor evidence, and successful hosted run 39354228417. Its independent chat is `01a154ce-e3ce-7ff3-a0b2-3565600d8a10`.
-- Local release evidence: 40 existing PostgreSQL cases and eight distinct release cases across the initial sweep/focused regressions; build/typecheck, HTTP session/CSRF/ownership/admin checks, real browser at 390×844 and 1280×720, effective reduced motion, independently reviewed fixes, and a built production Apache/PHP image checked against a disposable isolated PostgreSQL. Existing development history was preserved.
-- Hosted T3 run 39274872105 and T4 run 39279279150 passed. Those releases preceded the real-provider ingress/TLS, backup restore and recurring maintenance acceptance recorded below; physical touch and additional browser engines remain unverified.
-- Local admin credentials exist only in ignored `.local/admin-access.json` with mode 0600. Never copy their content into tracked documents or chat output.
-- Deployment/environment/admin/backup/maintenance procedures are in `docs/DEPLOYMENT.md`. Permanent $0 publication is explicitly authorized; no paid plan, card linking, trials or keep-alive traffic is authorized.
-- Actual providers: Vercel Hobby and Neon Free, no card. Frontend: https://brainsprint-voprosovnety.vercel.app ; analytics: https://brainsprint-voprosovnety.vercel.app/demo-analytics ; backend/admin: https://brainsprint-api-voprosovnety.vercel.app/admin . Production serves the checked application revision `73723ca` after a verified backend-first GitHub publication. PostgreSQL 17 is a new Neon Frankfurt database `brainsprint`; existing local history is untouched.
-- Neon configuration/sample migrations, append-only publication, 18 labeled synthetic runs and secret-file administrator provisioning succeeded. Initial hosted initialize/provision runs: 39407588710 / 39408074306. Private release credentials are only in ignored mode-0600 `.local/release-admin-access.json`; do not copy their contents into chat or tracked documents.
-- Render Hobby registration succeeded, but actual Free service creation required credit-card verification; no service/card was created. serv00 form was prepared but not submitted because its terms prohibit automated account creation; this provider is unnecessary. Vercel Container Runtime was excluded because no permanent free VCR image-storage allowance was established.
-- Backend uses pinned `vercel-php@0.9.0`, PHP 8.5, ordinary per-request Laravel and generated Filament assets. The runtime's old libpq lacks SNI; explicit Neon `PGOPTIONS=endpoint=...` resolved the public database error while keeping `sslmode=verify-full`. PostgreSQL shared cache/locks and bounded cache maintenance support function instances.
-- Public HTTP acceptance passed: full funnel and illustrative result, secure host-only HttpOnly cookies, CSRF/origin rejection, ownership, stable A/B assignment, concurrent completion deduplication, saved restoration and deletion of only the newly created acceptance visitors. `/up`, generated Filament CSS and protected direct API behavior passed; source/environment paths returned 404. Public browser acceptance completed a separate campaign-labeled disposable run: welcome/tutorial, all six challenges, keyboard/card controls, unfinished-round reload recovery, result, no-payment boundary and saved finish. Layout was inspected at 390×844 and 1280×720. Authenticated Filament login and real/synthetic cohort switching worked; the public synthetic sample matched the private panel (18 seeded runs before the browser fixture was labeled synthetic). Existing owner browser progress was preserved.
-- Additional local checks passed: shared-cache/retention 3 tests / 18 assertions, frontend typecheck; prior cold-start frontend build and production Docker package checks passed. Tests use only `brainsprint_test`, never Neon. Public acceptance uses explicit disposable visitors, not a production test suite.
-- An authenticated encrypted 32,722-byte database backup was created and restored into newly created local `brainsprint_restore_check_20261020`, validating 1 configuration, 18 synthetic runs and 1 administrator. Tampering was rejected; the temporary database/plaintext were removed. Private recovery key: ignored mode-0600 `.local/release-backup-key.pem`; owner must retain an independent private recovery copy.
-- Official Vercel GitHub App access was explicitly approved only for `voprosovnety/brainsprint` and installed. Both Vercel projects are linked; root directories and Frankfurt region are set. Production tracks `codex/release-api` and `codex/release-web`; other Git branches are disabled in each project configuration. Commit `b775b93` passed hosted Funnel checks 39471668268. Commit `73723ca` passed Funnel checks 39472251856 and automatic Release operations 39472376098. Both public `/release.json` endpoints confirmed that exact SHA, and backend boot/database readiness passed before frontend publication. Hosted daily maintenance succeeded as 39471882792.
-- Enabled maintenance: daily 03:23 UTC / 10:23 Vietnam, encrypted artifacts retained three days, 20 MiB dump cap and 100 MiB artifact guard, backup-before-retention, bounded expired cache/session/visitor cleanup and idempotent synthetic sample refresh. Hosted execution 39471882792 passed, including PostgreSQL 17 dump encryption/upload and bounded maintenance. GitHub schedules can disable after 60 days without repository activity; no fake keep-alive will be added.
-- Independent review found that revision-only backend confirmation could promote a broken API; the publisher now also requires healthy Laravel `/up` and database-backed `/admin/login`. The review stopped on an account usage limit; no additional reviewer was spawned. The final implementation diff and configured-secret exclusion were inspected before commit; hosted package checks passed. The hosted encrypted backup artifact (38,459 bytes, expiry 2026-10-23T18:07:18Z) was downloaded, authenticated/decrypted and its PostgreSQL archive validated; plaintext was removed. The completed browser acceptance run and associated events were labeled synthetic through a strictly campaign-scoped operator update, preserving ordinary visitors.
+The user now explicitly authorizes publication of the new version and prioritizes it over legacy-run review. Manual `Release operations: release` will publish the committed v3 source through the existing backend-first release branches. The separate Funnel checks suite is not requested; the release commit skips that automatic suite. Hosting compilation and the existing revision/health readiness gate are necessary deployment steps. A bounded encrypted backup is uploaded before database publication; no visitor reset or retrospective migration is required.
 
-## MVP
+Status: preparing source commit and manual release. No public success is claimed until both exact revision manifests are live.
 
-| ID | Task | Depends on | Status | Completion criteria |
+## Current direction — 2026-10-21
+
+The earlier demo is implemented, but its consumer format is superseded by the supplied [FunnelFox reference](https://app.funnelfox.com/preview/01M4AW6YXV7DZH8J83YGBPP9RR/main/5mAW9BVG). Replace the landing, onboarding, tutorial, six game rounds, immediate snapshot and payment boundary with the full reference-style quiz-to-paywall journey.
+
+The reference contains 58 configured entries: immediate word memory; 39 mixed quiz responses and two demographics; three timed digit reveals and four quiz interstitials; confirmation/trust; staged preparation with modal prompts; email; a shorter preparation stage; long paywall; guide upsell; and two alternative final screens. The architecture maps every position, including 23 distinct visual completion questions. This replaces the 3–4 minute constraint, not just the existing colors.
+
+The commercial presentation, simulated checkout and upsell are required. There will be no real payment, provider integration, card collection, subscription, recurring billing or marketing delivery. Remove repeated demo warnings and the old boundary from the new consumer journey. Preserve infrastructure, historical progress, privacy controls and protected administration.
+
+## Redesign work
+
+| ID | Work | Depends on | Status | Completion criteria |
 | --- | --- | --- | --- | --- |
-| T0 | Repository foundation and task organization | Approval | Complete | Initial commit, private remote, documents/contracts, first independent executor dispatched |
-| T1 | First working vertical slice | T0 | Complete | Accepted local slice and verification at `ebacae1`; clean-checkout PHPUnit discovery fixed at `9b9aa61` |
-| T2 | Complete configurable funnel | T1 | Complete | Accepted full funnel at `cf4e385`; eleven PostgreSQL tests, HTTP/browser verification, independent review fixes; no development-data reset |
-| T3 | Events, UTM, and landing A/B test | T2 contracts | Complete | Accepted at `8236371`; definitions in `docs/ANALYTICS.md`; hosted run 39274872105 passed |
-| T4 | Filament and compact public demo analytics | T3 | Complete | Accepted at `785bcbb`; protected read-only admin, shared aggregate service, synthetic-only preview and repeatable seed; hosted run 39279279150 passed |
-| T5 | Integration and MVP release preparation | T1–T4 | Complete (local release ready) | Accepted candidate `7361261`, isolated production package checks and hosted run 39354228417 passed; public deployment remains separately gated |
+| R0 | Inspect reference and rewrite plan/architecture | User request | Complete — documentation only | Catalog of 58 entries mapped; intro/visual question/paywall inspected; immediate answer navigation observed; unavailable reference payment methods disclosed; no application changes |
+| R1 | Define v3 content, configuration and contract | R0; implementation request | Implemented locally | Every reference position mapped to target content/assets; all 23 visual questions specified; answer schemas, transitions, teaser/unlock boundary, legacy behavior and event meanings reflected in contracts/code |
+| R2 | Build visual system and direct entry | R1 | Implemented locally — unverified | Gray/periwinkle palette, serif headings, narrow responsive layout, brand/timer/progress header, answer states and bottom CTA; new visitors enter at word memory without legacy onboarding |
+| R3 | Implement complete mixed quiz | R1–R2 | Implemented locally — unverified | All 39 quiz responses, three reveals, four interstitials and two demographics in mapped order; immediate selection/advance, required answers, later word recall, saved restoration and accurate progress; original assets |
+| R4 | Implement confirmation and preparation | R3 | Implemented locally — unverified | Confirmation saves once; trust screen, staged preparation, information modal/two binary prompts, optional email and shorter preparation; report generated once; explicit retry/restoration; no mailing |
+| R5 | Implement paywall and simulated unlock | R1–R2, R4 | Implemented locally — unverified | Full sticky offer/countdown, hero, coherent pricing, checkout, benefits, terms layout, trust/comparison, teaser, sample social content, reassurance and FAQ; no payment provider; server persists unlock once and withholds full report beforehand |
+| R6 | Implement guide upsell and final destinations | R5 | Implemented locally — unverified | Complete $1 mock guide offer; working/persisted accept and decline; corresponding final compositions with accessible sample report/guide; no dead app links or payment receipts |
+| R7 | Adapt analytics, compatibility and documentation | R1, R3–R6 | Implemented locally — unverified | v1/v2 preserved; no forced reset; old experiment retired only for v3; shared analytics/fixtures cover new stages; no purchase/revenue events; README, contracts, analytics definitions and agent guidance match code |
+| R8 | Review and prepare publication | R2–R7 | Static integration review; publication deferred | Final diff reviewed; requested checks/limitations recorded; full journey and historical-state invariants assessed; publication prepared separately under applicable authorization |
 
-T1 intentionally implements only one temporary slice of the single BrainSprint configuration, not an alternative funnel. T2 expands that configuration into the full experience.
+R1–R8 were implemented under local-only authorization. The later hosting request above now authorizes the ordinary release migrations/append-only publication and backend/frontend deployment; it does not authorize credential rotation or visitor resets. Analytics and operational features must not become extra consumer screens. The checked-in v3 source becomes available to new visitors only after a separately authorized publication; existing visitors retain their pinned versions.
 
-## Polish
+## Local implementation record — 2026-10-21
 
-After MVP functionality: refine typography, transitions, accessibility, pacing, responsive composition, and measured load performance. These improvements do not postpone mandatory screen-by-screen browser review or excuse weak MVP UX.
+- R1: `brainsprint-v3.json`, `contracts/V3.md`, OpenAPI, typed v3 interface and full 58-position content/asset manifest define explicit immutable transitions and the two final alternatives. V1/v2 sources are untouched.
+- R2–R4: root dispatch prefers the owned pinned run, isolates the legacy UI and starts v3 immediately. All 39 quiz responses, two demographics, three timed reveals, four quiz interludes and trust/preparation/email screens are present. The 23 distinct visual problems have 115 original prompt/option SVGs; landmark/community add two more. Classification choices use original inline drawings. Timer, progress, answer locking, exact retry, saved-history review, modal preferences and reduced-motion preparation are implemented.
+- R5–R6: complete paywall/checkout, long guide upsell, both final compositions, full readable report and four guide practices are implemented. Three original commercial SVGs complete 120 local files. Every unlock CTA opens the same inert dialog. Mock terms use consistent pricing and exact $9.00 savings; no financial fields, SDK, subscription or delivery exists. Server UTC deadline, private report envelope, immutable unlock/guide answer and milestone transactions use existing tables.
+- R7: v3 has no new landing assignment; attribution, session/CSRF/proxy/admin/lifecycle boundaries remain in place. Shared version-specific stage aggregates, public/admin presentation and append-only v3 fixtures are added. Existing regression suites explicitly seed v2 rather than accidentally switching to the new publication source. Future HTTP scripts support v3 answers and respect rate limits. README/contracts/analytics/agent guidance are synchronized.
+- Integration addressed nullable historical experiment responses, semantic title/diagram alignment, duplicate privacy/footer surfaces, nested main landmarks, CTA contrast, saved commercial-screen history layout and painted checkout exposure. No user-authored architecture changes were discarded.
+- Verification performed: task-relevant source reading and final static integration diff review only. **No tests, build, lint, type-check, browser/UI inspection, API smoke, application/Docker startup, migration, seeding or deployment ran.** No production/database rows, published versions or visitors were changed.
+- Remaining limitations: the implementation has no executed acceptance evidence, and the complete mobile/desktop journey, both guide outcomes, visual fidelity, compilation and runtime/security invariants still require separately requested checks. Existing regression fixtures cover legacy behavior; they are not v3 acceptance. Typography uses local system Georgia/Arial-style fallbacks rather than downloaded Newsreader/Inter fonts. The source/seeder is ready, but v3 has not been published into a database; existing services will continue using their current published version until publication is explicitly authorized.
 
-## Advanced
+## Decisions for implementation
 
-Optional only after a finished MVP: PostHog integration if it materially improves the demonstration, or limited configuration-text editing. No extra products or speculative platforms.
+- Publish an append-only v3 configuration with semantic IDs and the architecture's full positional map. Keep v1/v2 validators/runtime behavior. Replace assumptions requiring onboarding/tutorial/three game categories/result/boundary only for v3.
+- Reuse bounded components: intro, choice, scale, reveal, interstitial, confirmation, processing, email, paywall, upsell and final. Image/text choices share validation. No raw reference scripts or generic page builder.
+- Create an asset manifest for all 23 visual problems and alternatives, classification/landmark images, hero, report preview and guide cover. Use original local assets and accessible descriptions. Repeated placeholder puzzles and hotlinked reference images are not completion.
+- Specify answer locking, processing prompt payloads, email skip, countdown/expiry, simulated unlock, upsell decision and final completion in the contract. Keep a public teaser separate from the full session-owned report. Reuse run JSON unless a concrete constraint warrants a migration.
+- Keep one coherent mock offer: $9.99 comparison/$0.99 introductory display, three introductory days, $39.99 every four weeks; guide comparison $27/$1. Do not implement renewal or hidden contradictory offer variants.
+- Persist report/strength fixtures independently of correctness, without a scoring engine. Avoid claims of measured IQ, clinical validation, endorsement or live customers. Keep any sample-data explanation in the quiet information surface rather than repeated main-flow banners.
+- Keep checkout details inert and use placeholders. The mock action submits only an allowed offer ID; real card/bank/wallet data never enters forms, APIs, events or logs.
+- Define v3 event authority and metric denominators alongside the contract. Preserve old meanings; server milestones cover confirmation/unlock/completion, while exposure describes what was actually displayed.
+
+## Acceptance criteria
+
+- A new visitor starts at word memory. Legacy promotional landing, onboarding, grid tutorial, card-arrangement games, pre-paywall three-indicator snapshot and payment boundary are absent from v3.
+- The complete inventory/order matches the architecture, including four interstitials at mapped positions and the commercial sequence. Word/digit recall corresponds to the earlier reveals.
+- The visual direction matches the reference's centered serif-heading/periwinkle treatment. Mobile CTAs never obscure options. Desktop keeps a deliberate narrow funnel. Keyboard, focus, zoom and reduced motion work throughout.
+- Answers save before advancement. Double taps/retries cannot skip screens or duplicate milestones. Refresh restores confirmed progress; unfinished timed/presentation states recover coherently. Browser history cannot access future steps or the locked report.
+- The paywall is a complete first-class page. Every CTA reaches the same functional mock checkout. Countdown and prices stay consistent. The old boundary and unavailable-method placeholder are not acceptable substitutes.
+- Simulated unlock and both upsell outcomes persist once. Final screens expose usable sample content. No real financial, email or consumer-account operation occurs.
+- Historical configuration, answers, results, attribution and completion semantics are preserved. New state respects ownership/deletion/retention. Public analytics stay aggregate-only and administration stays protected.
+- Documentation changes alongside implemented behavior. Older completed MVP tasks do not imply that their replacements are complete.
+
+## Verification budget
+
+For this implementation, inspect the final integration diff only. No tests, build, lint, type-check, application startup, local UI, API smoke, database publication or deployment checks are requested or run. Inspecting the external reference is requested product research, not application acceptance testing.
+
+During implementation, executable checks require the user's explicit request by default. When requested, use the narrow relevant set: v3 publication/answers/transitions; ownership and CSRF; retry/unlock/milestone deduplication; historical compatibility; mobile/desktop full-path review with both upsell choices. One narrow check is permitted for a concrete risk of irreversible loss, secret exposure or authorization failure after explaining it. Do not create blanket evidence directories or repeat successful checks without relevant changes.
+
+## Existing implementation and operational baseline
+
+This is the previous implementation record, not acceptance of R1–R8. Runtime/provider state was not rechecked during this planning task.
+
+| Previous work | Accepted revision | Recorded outcome |
+| --- | --- | --- |
+| T0: foundation | Initial history | Repository, contracts and task organization |
+| T1: vertical slice | `ebacae1`, `9b9aa61` | Memory-only slice and PHPUnit discovery fix |
+| T2: earlier complete funnel | `cf4e385` | Six-challenge flow, persistence and historical compatibility |
+| T3: analytics/experiment | `8236371` | Assignment, UTM, actual exposures and metric definitions |
+| T4: admin/sample analytics | `785bcbb` | Protected read-only Filament and shared synthetic aggregates |
+| T5: release/lifecycle | `7361261` | Accepted local release candidate and hosted checks |
+| Publication/automation | `73723ca` | Accepted public release and backend-first exact-revision publication |
+
+- Source: [voprosovnety/brainsprint](https://github.com/voprosovnety/brainsprint). Visibility was recorded as public on 2026-10-20; planning does not change it.
+- Recorded public addresses: [frontend](https://brainsprint-voprosovnety.vercel.app), [sample analytics](https://brainsprint-voprosovnety.vercel.app/demo-analytics), [backend administration](https://brainsprint-api-voprosovnety.vercel.app/admin). Providers: Vercel Hobby and Neon Free PostgreSQL 17, Frankfurt, within the existing strict $0/month boundary.
+- The release uses pinned `vercel-php@0.9.0`, PHP 8.5, ordinary per-request Laravel, generated Filament assets and shared PostgreSQL cache/locks. The Apache/PHP package remains available. Preserve the working infrastructure.
+- Local documented addresses: web `http://127.0.0.1:3000`, API/admin `http://127.0.0.1:8008/admin`, PostgreSQL loopback `55432`. Consult README before startup; this record does not establish service state.
+- Prior acceptance covered the old flow, persistence, ownership, CSRF, retries, stable assignment, deletion, admin, synthetic aggregates and layouts at 390×844 and 1280×720. These checks do not validate the redesign. Physical touch and other browser engines remain unverified.
+- Accepted-release hosted checks: Funnel `39472251856`, Release operations `39472376098`; maintenance `39471882792`. Both release manifests confirmed `73723ca` and backend health/database readiness preceded frontend publication.
+- Production tracks `codex/release-api` and `codex/release-web`; other branches are disabled for deployment. Preserve those controls. A documentation edit is not authority to publish application changes.
+- Daily maintenance was recorded at 03:23 UTC / 10:23 Vietnam: encrypted backup before bounded retention, expired cache/session/visitor cleanup and synthetic-sample refresh. Artifact retention: three days; dump cap: 20 MiB; artifact guard: 100 MiB. Schedules may disable after 60 days without activity; no paid fallback or fake keep-alive is authorized.
+- An encrypted backup was restored into an isolated local database and tampering rejected; temporary plaintext/database were removed. Historical artifact expiry does not establish current recovery availability. Preserve the private recovery key independently.
+- Local/admin release access and backup recovery files remain ignored under `.local/`, mode `0600`. Never copy credentials, cookies or keys into tracked documents or chat.
+- Setup stays in README; operational procedures stay in [DEPLOYMENT.md](DEPLOYMENT.md). Preserve ordinary visitor history and synthetic samples.
 
 ## Execution protocol
 
-1. Coordinator establishes task boundaries and shared contracts.
-2. A significant task runs in an independent Codex chat with only its brief and relevant documents. Do not fork full chat history by default.
-3. The initial executor uses the project checkout exclusively; use worktrees for genuinely independent concurrent edits later.
-4. Executors may implement, install compatible dependencies, run relevant checks, fix issues, and commit within assigned scope. No paid services, unrelated files, or destructive operations. The dedicated free-deployment task may publish the demo within its explicit $0 authorization.
-5. Each executor updates its task brief, relevant docs, and commit; returns what changed, actual checks, limitations, and next step. Coordinator independently assesses acceptance criteria and integrates.
-6. Failed acceptance criteria remain open. A successful build or executor message alone is not completion.
-
-## Operating handoff
-
-Public deployment, exact checked-commit autodeploy, explicit release commands, protected administrator access, daily bounded maintenance and encrypted backups are accepted. No required deployment work remains. Documentation-only status updates do not require rebuilding the unchanged application. Keep the private recovery key in an independent owner-controlled location; preserve runtime keys and the administrator access file privately. Watch provider quotas and Actions failures; GitHub may disable schedules after 60 days without repository activity. No paid fallback or fake keep-alive is authorized. Physical touch, other browser engines, Russian/employer-network reachability and provider availability guarantees are not established by this acceptance.
+Work in this chat/checkout by default. Do not create executor chats or spawn agents for routine implementation, documentation lookup or repeated review. Delegate only when requested or required by applicable instructions. The change owner updates this file with completed scope, actual checks and limitations. The previous mandatory executor-chat process and historical task briefs do not define the new product scope.

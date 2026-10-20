@@ -19,7 +19,7 @@ class VisitorContext
         return $id;
     }
 
-    public static function capture(Request $request, array $attribution = []): array
+    public static function capture(Request $request, array $attribution = [], bool $assignExperiment = true): array
     {
         Validator::make(['attribution' => $attribution], [
             'attribution' => ['array:'.implode(',', self::UTM)],
@@ -27,17 +27,19 @@ class VisitorContext
         ])->validate();
         $visitor = self::id($request);
         // Deterministic keyed assignment also survives simultaneous first requests.
-        $experiment = $request->session()->get('experiment') ?? [
+        $experiment = $assignExperiment ? ($request->session()->get('experiment') ?? [
             'id' => self::EXPERIMENT,
             'variant' => hexdec(substr(hash_hmac('sha256', $visitor.self::EXPERIMENT, config('app.key')), 0, 2)) % 2 ? 'B' : 'A',
-        ];
-        $request->session()->put('experiment', $experiment);
+        ]) : null;
+        if ($experiment) {
+            $request->session()->put('experiment', $experiment);
+        }
         if (! $request->session()->has('attribution')) {
             $request->session()->put('attribution', array_filter($attribution, fn ($v) => $v !== ''));
         }
 
         return [
-            'visitor_id' => $visitor, 'experiment_id' => $experiment['id'], 'variant' => $experiment['variant'],
+            'visitor_id' => $visitor, 'experiment_id' => $experiment['id'] ?? null, 'variant' => $experiment['variant'] ?? null,
             'attribution' => json_encode((object) $request->session()->get('attribution')),
             'is_synthetic' => app()->environment(['local', 'testing']),
         ];

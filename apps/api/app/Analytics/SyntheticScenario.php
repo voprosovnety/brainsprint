@@ -12,6 +12,7 @@ class SyntheticScenario
 {
     public function seed(CarbonImmutable $day): void
     {
+        app(SyntheticV3Scenario::class)->seed($day);
         $day = $day->utc()->startOfDay();
         $source = file_get_contents(resource_path('funnel/brainsprint-v2.json'));
         $config = json_decode($source, true, flags: JSON_THROW_ON_ERROR);
@@ -25,7 +26,7 @@ class SyntheticScenario
                 return;
             }
             if (! DB::table('funnel_versions')->where('id', $version)->exists()) {
-                throw new \RuntimeException('Publish the checked-in configuration with php artisan db:seed before seeding demo analytics.');
+                return; // A fresh v3 installation has no historical v2 publication.
             }
             for ($i = 0; $i < 24; $i++) {
                 $visitor = 'demo-v1:'.$day->toDateString().':'.$i;

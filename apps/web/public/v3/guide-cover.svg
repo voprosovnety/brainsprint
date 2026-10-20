@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="520" viewBox="0 0 440 520" fill="none">
+  <title>Everyday Thinking</title><desc>An original lavender book cover with a winding path, abstract plants and a small sun.</desc>
+  <defs><linearGradient id="cover" x1="75" y1="63" x2="346" y2="438" gradientUnits="userSpaceOnUse"><stop stop-color="#919DF1"/><stop offset="1" stop-color="#7483DA"/></linearGradient><filter id="shadow" x="26" y="22" width="389" height="486" filterUnits="userSpaceOnUse"><feDropShadow dx="6" dy="18" stdDeviation="13" flood-color="#3A426C" flood-opacity=".17"/></filter></defs>
+  <ellipse cx="229" cy="466" rx="146" ry="16" fill="#E2E5EF"/>
+  <g transform="rotate(-7 220 260)" filter="url(#shadow)"><path d="M81 60H336C345 60 352 67 352 76V434C352 443 345 450 336 450H81V60Z" fill="#DCE1F4"/><path d="M85 62H333C341 62 345 66 345 74V438H85V62Z" fill="#FCFCFF"/><path d="M92 441H337M92 435H337M92 429H337" stroke="#D2D8EC"/><path d="M76 53H326C337 53 343 60 343 69V429H76C68 429 63 424 63 417V65C63 58 68 53 76 53Z" fill="url(#cover)"/><path d="M79 53V428" stroke="#6C7BCF" stroke-width="2"/>
+  <text x="106" y="93" fill="#E5E9FF" font-family="Arial,sans-serif" font-size="8" letter-spacing="2.8">BRAINSPRINT</text>
+  <text x="105" y="148" fill="#fff" font-family="Georgia,serif" font-size="36">Everyday</text><text x="105" y="186" fill="#fff" font-family="Georgia,serif" font-size="36">Thinking</text>
+  <text x="108" y="213" fill="#E4E8FF" font-family="Arial,sans-serif" font-size="9" letter-spacing=".6">SMALL PRACTICES. NEW PERSPECTIVES.</text>
+  <circle cx="288" cy="260" r="22" fill="#DDE3FF"/><circle cx="288" cy="260" r="32" stroke="#BEC9FF" stroke-opacity=".6"/>
+  <path d="M103 393C159 348 230 396 238 350C243 322 177 338 176 308C175 289 210 281 229 283" stroke="#D2DBFF" stroke-width="19" stroke-linecap="round"/><path d="M103 393C159 348 230 396 238 350C243 322 177 338 176 308C175 289 210 281 229 283" stroke="#95A4E5" stroke-width="1.5" stroke-dasharray="2 7" stroke-linecap="round"/>
+  <path d="M119 335V278M119 316C94 315 95 293 96 289C111 291 119 298 119 316ZM120 300C136 300 146 286 146 278C129 278 121 289 120 300Z" stroke="#D6DFFB" stroke-width="1.8" fill="#BBC9F5"/>
+  <path d="M290 388V330M290 367C269 367 262 348 263 342C278 342 289 353 290 367ZM291 355C312 351 316 338 315 332C301 334 291 345 291 355Z" stroke="#D6DFFB" stroke-width="1.8" fill="#BBC9F5"/>
+  <path d="M166 253L168 260L175 262L168 264L166 271L164 264L157 262L164 260Z" fill="#D5DDFF"/><circle cx="261" cy="315" r="3" fill="#D5DDFF"/>
+  <path d="M107 400H304" stroke="#B6C3F2" stroke-opacity=".6"/><text x="108" y="414" fill="#E4E9FF" font-family="Georgia,serif" font-style="italic" font-size="9">A little room for a curious mind.</text>
+  </g>
+</svg>
