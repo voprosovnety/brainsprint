@@ -12,7 +12,7 @@ Next.js presents the experience and proxies the allowlisted consumer and synthet
 
 The final consumer screen closes the experience with a real **Finish demo** action. It persists terminal completion separately from quiz completion. There are no prices, subscriptions or checkout. Refresh restores confirmed progress; an unfinished reveal starts again with a notice. Back/Forward reviews saved steps without submitting again, and cannot skip ahead. A save failure retains the submitted answer for an identical retry or offers restoration from the server.
 
-The landing uses a stable server-assigned A/B experiment, first-touch UTM and actual screen exposure events. One Laravel aggregate service supplies counts, conversions, conditional step exposure, elapsed time and experiment metrics. [Analytics definitions and the T4 API](docs/ANALYTICS.md) document exact cohorts and limitations. A protected, read-only Filament panel and a compact public synthetic analytics page consume that service. No public deployment exists.
+The landing uses a stable server-assigned A/B experiment, first-touch UTM and actual screen exposure events. One Laravel aggregate service supplies counts, conversions, conditional step exposure, elapsed time and experiment metrics. [Analytics definitions and the T4 API](docs/ANALYTICS.md) document exact cohorts and limitations. A protected, read-only Filament panel and a compact public synthetic analytics page consume that service. Public URLs and release acceptance are recorded in [the implementation plan](docs/IMPLEMENTATION_PLAN.md).
 
 ## Local requirements
 
@@ -96,7 +96,7 @@ php artisan analytics:seed-demo
 php artisan analytics:seed-demo --date=2026-10-19
 ```
 
-The daily `demo-v1:YYYY-MM-DD:*` batch contains 24 illustrative landing exposures and 18 runs across both variants, with completed, unfinished and conditional paths. Twenty exposures occur at noon three UTC days before the anchor; four occur at anchor midnight so they are pending during that UTC day. All run/event timestamps follow those exposures. The source's existing content-addressed configuration is pinned; it must already be published by setup/`db:seed`. This command never publishes configurations; ordinary publication rows and existing answers/results are not overwritten. Repeating the same date is a no-op, including after source changes. A later anchor appends a new scenario instead of moving historical timestamps. Old samples naturally leave the rolling window; refresh manually with today's date. No worker or recurring traffic generator is needed.
+The daily `demo-v1:YYYY-MM-DD:*` batch contains 24 illustrative landing exposures and 18 runs across both variants, with completed, unfinished and conditional paths. Twenty exposures occur at noon three UTC days before the anchor; four occur at anchor midnight so they are pending during that UTC day. All run/event timestamps follow those exposures. The source's existing content-addressed configuration is pinned; it must already be published by setup/`db:seed`. This command never publishes configurations; ordinary publication rows and existing answers/results are not overwritten. Repeating the same date is a no-op, including after source changes. A later anchor appends a new scenario instead of moving historical timestamps. Old samples naturally leave the rolling window; release maintenance refreshes the sample once daily. No persistent worker or keep-alive traffic is needed.
 
 Open [Demo analytics](http://127.0.0.1:3000/demo-analytics), also linked from the funnel footer. It presents a seven-day synthetic-only aggregate sample (seeded scenarios plus local synthetic activity), stage counts/conversions, mature/pending A/B denominators and wall-clock elapsed time. The shared definitions are in [ANALYTICS.md](docs/ANALYTICS.md). Public callers cannot select real data, arbitrary dates, sessions or raw records. Empty, loading, retry and unavailable states are explicit; no statistical winner is claimed.
 
@@ -104,7 +104,7 @@ Open [Demo analytics](http://127.0.0.1:3000/demo-analytics), also linked from th
 
 ```sh
 cd apps/api
-php artisan test --compact --filter='MemoryRoundTest|FunnelProgressionTest|AnalyticsExperimentTest|AnalyticsAggregateTest|AdminDemoAnalyticsTest|ReleaseLifecycleTest'
+php artisan test --compact --filter='MemoryRoundTest|FunnelProgressionTest|AnalyticsExperimentTest|AnalyticsAggregateTest|AdminDemoAnalyticsTest|ReleaseLifecycleTest|SharedCacheTest'
 ```
 
 Tests require the separate local PostgreSQL database `brainsprint_test`; a guard refuses other database names, remote hosts, and database URLs before migrations. They cover both tutorial paths, all mechanics, publication validation, reconfiguration, historical compatibility, ownership, forbidden transitions, malformed/conflicting answers, persisted results, terminal completion, duplicate milestones and transactional rollback. Analytics suites additionally cover assignment, actual exposures, first-touch UTM, client trust, semantic/UUID deduplication, CSRF, exact real/synthetic cohorts, legacy/branch denominators and timezone/microsecond boundaries. Test data rolls back.
@@ -125,7 +125,9 @@ Verification evidence is recorded in the [T2 delivery notes](docs/tasks/T2_COMPL
 
 ## Release package and data lifecycle
 
-[Release operation](docs/DEPLOYMENT.md) contains exact Vercel/Railway configuration, environment variables, migration/publication/seed/admin/maintenance commands, disposable production-image checks and backup/rollback/approval requirements. The production package uses Apache/PHP and private PostgreSQL networking; no cloud service is created. Vercel Hobby eligibility must be confirmed for personal noncommercial use. The $5–10/month light-usage target is variable, not a fixed commitment.
+The [hosting comparison](docs/HOSTING_OPTIONS.md) explains the strict $0/month deployment boundary and free-provider limitations. Paid comparisons are historical references outside that budget. See the [implementation plan](docs/IMPLEMENTATION_PLAN.md) for verified deployment status and public URLs.
+
+[Release operation](docs/DEPLOYMENT.md) documents the approved free deployment boundary, runtime variables, explicit migration/publication/seed/admin commands, maintenance, backups and rollback. The Vercel PHP adapter preserves ordinary per-request Laravel, PostgreSQL and the same-origin Next.js proxy; the Apache image remains an alternative package. Vercel Hobby requires personal noncommercial use. Do not enable paid resources or automatic paid overage.
 
 ```sh
 cd apps/api
@@ -148,6 +150,6 @@ Retention defaults to non-destructive preview. It selects visitors whose latest 
 | `infra/` | Local PostgreSQL, setup, and focused HTTP check |
 | `docs/` | Architecture, coordinating implementation plan, and task briefs |
 
-No payments, subscriptions, consumer accounts, scoring engine, Reaction Speed, training product, Redis, workers, queues, or PostHog. A/B assignment precedes rendering; client analytics delivery has bounded retries and a separate rate budget. Bootstrap alone does not claim exposure. Ordinary aggregates exclude synthetic data; local/testing collection is synthetic by server policy. Session and configurable global application rate budgets apply; production API calls require a server-only proxy secret. There is no configured edge DDoS service. The 30-day lifecycle, bounded preview/execute retention and deployment assumptions are documented in [release operation](docs/DEPLOYMENT.md). Public hosting and paid services require Product Owner approval.
+No payments, subscriptions, consumer accounts, scoring engine, Reaction Speed, training product, Redis, workers, queues, or PostHog. A/B assignment precedes rendering; client analytics delivery has bounded retries and a separate rate budget. Bootstrap alone does not claim exposure. Ordinary aggregates exclude synthetic data; local/testing collection is synthetic by server policy. Session and configurable global application rate budgets apply; production API calls require a server-only proxy secret. There is no configured edge DDoS service. The 30-day lifecycle, bounded preview/execute retention and deployment assumptions are documented in [release operation](docs/DEPLOYMENT.md). Public deployment is authorized only within the strict $0/month boundary; paid resources require separate approval.
 
 See [architecture](docs/ARCHITECTURE.md), [consumer contract](contracts/README.md), [T1 brief](docs/tasks/T1_VERTICAL_SLICE.md), and the coordinator-owned [implementation plan](docs/IMPLEMENTATION_PLAN.md).

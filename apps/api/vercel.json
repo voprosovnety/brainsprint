@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "regions": ["fra1"],
+  "git": {"deploymentEnabled": {"**": false, "codex/release-api": true}},
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.9.0",
+      "maxDuration": 60,
+      "excludeFiles": "{tests/**,.env*,storage/**,node_modules/**,.vercel/**}"
+    }
+  },
+  "routes": [{ "src": "/(.*)", "dest": "/api/index.php" }]
+}

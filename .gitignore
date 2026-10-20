@@ -33,3 +33,4 @@ test-results/
 .phpunit.result.cache
 
 *.tsbuildinfo
+.vercel/

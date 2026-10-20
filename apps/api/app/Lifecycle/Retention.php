@@ -53,6 +53,13 @@ class Retention
             $query = $expired()->whereIn('id', $ids);
             $counts[$table] = $execute ? $query->delete() : $query->count();
         }
+        foreach (['cache', 'cache_locks'] as $table) {
+            // Recheck expiration so a concurrently renewed lock or budget survives.
+            $expired = fn () => DB::table($table)->where('expiration', '>', 0)->where('expiration', '<', $now->timestamp);
+            $keys = $expired()->orderBy('expiration')->orderBy('key')->limit($limit)->pluck('key');
+            $query = $expired()->whereIn('key', $keys);
+            $counts[$table] = $execute ? $query->delete() : $query->count();
+        }
 
         return ['mode' => $execute ? 'execute' : 'preview', 'cutoff' => $cutoff->toIso8601String(), 'limit' => $limit, 'counts' => $counts];
     }

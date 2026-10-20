@@ -1,0 +1,70 @@
+name: Release maintenance
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: brainsprint-release-database
+  cancel-in-progress: false
+jobs:
+  maintain:
+    if: github.ref == 'refs/heads/main' && vars.RELEASE_MAINTENANCE_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: production
+    env:
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      APP_URL: ${{ vars.RELEASE_API_ORIGIN }}
+      APP_KEY: ${{ secrets.RELEASE_APP_KEY }}
+      DB_CONNECTION: pgsql
+      DB_PORT: '5432'
+      DB_URL: ${{ secrets.RELEASE_DATABASE_URL }}
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      LOG_CHANNEL: stderr
+      CONSUMER_PROXY_SECRET: ${{ secrets.RELEASE_PROXY_SECRET }}
+      PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
+      PGCONNECT_TIMEOUT: '10'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, mbstring, intl, bcmath, zip
+          coverage: none
+          tools: composer:v2
+      - run: composer install --working-dir=apps/api --no-dev --no-interaction --prefer-dist --no-progress
+      - name: Guard release target
+        run: php infra/production/release-target.php
+      - name: Enforce conservative artifact storage budget
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          bytes=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" --jq '[.artifacts[] | select(.expired == false) | .size_in_bytes] | add // 0' | awk '{sum += $1} END {print sum}')
+          if [ "$bytes" -gt 104857600 ]; then
+            echo 'Backup storage exceeds the 100 MiB guard; no new artifact or deletion will run.'
+            exit 1
+          fi
+      - name: Create encrypted backup before retention
+        env:
+          BRAINSPRINT_BACKUP_DOCKER: '1'
+        run: python3 infra/production/backup.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/brainsprint-backup.cms
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
+      - name: Maintain expired anonymous data and the labeled sample
+        run: |
+          php apps/api/artisan privacy:retention --execute --limit=500
+          php apps/api/artisan analytics:seed-demo
+      - name: Remove temporary encrypted file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/brainsprint-backup.cms"

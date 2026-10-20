@@ -12,7 +12,7 @@ on:
     branches: [main]
     types: [completed]
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: brainsprint-release-database
   cancel-in-progress: false
@@ -21,10 +21,11 @@ jobs:
     if: >-
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
+      (vars.RELEASE_DEPLOY_ENABLED == 'true' &&
+      github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_repository.full_name == github.repository))
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment: production
     env:
       APP_ENV: production
@@ -36,7 +37,7 @@ jobs:
       DB_URL: ${{ secrets.RELEASE_DATABASE_URL }}
       SESSION_DRIVER: database
       SESSION_ENCRYPT: 'true'
-      CACHE_STORE: file
+      CACHE_STORE: database
       LOG_CHANNEL: stderr
       CONSUMER_PROXY_SECRET: ${{ secrets.RELEASE_PROXY_SECRET }}
       PGCONNECT_TIMEOUT: '10'
@@ -54,6 +55,12 @@ jobs:
       - run: composer install --working-dir=apps/api --no-dev --no-interaction --prefer-dist --no-progress
       - name: Guard release target
         run: php infra/production/release-target.php
+      - name: Refuse a superseded automatic release
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ github.event.workflow_run.head_sha }}
+        run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)" = "$RELEASE_COMMIT"
       - name: Apply explicit migrations and configuration publication
         if: github.event_name == 'workflow_run' || inputs.operation == 'initialize' || inputs.operation == 'release'
         working-directory: apps/api
@@ -77,14 +84,9 @@ jobs:
       - name: Preview retention without deleting
         if: inputs.operation == 'maintenance-preview'
         run: php apps/api/artisan privacy:retention --limit=500
-      - name: Deploy the checked commit to Render Free
+      - name: Publish the checked backend, then the frontend
         if: github.event_name == 'workflow_run' || inputs.operation == 'release'
         env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
-        run: |
-          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-            echo 'Render deploy hook is not configured; release deployment is unavailable.'
-            exit 1
-          fi
-          curl --fail --silent --show-error --max-time 30 --output /dev/null "${RENDER_DEPLOY_HOOK}&ref=${RELEASE_COMMIT}"
+        run: python3 infra/production/publish.py

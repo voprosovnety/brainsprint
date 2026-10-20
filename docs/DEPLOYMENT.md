@@ -1,90 +1,81 @@
 # Release operation
 
-This repository packages Next.js for Vercel and ordinary per-request Apache/PHP for Railway, with PostgreSQL on the same Railway private network. No cloud resources, public domains or recurring maintenance are configured by this repository. Local execution does not verify provider ingress, certificates, backups or hosted CI.
+Current public URLs, account state and acceptance results belong exclusively in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). This document describes configuration and operator procedures.
 
-## Approval and cost boundary
+## Permanent free boundary
 
-Before publishing, the owner must approve the public frontend/backend origins, provider account access, repository integration, Railway billing and a resource budget. Target approximately **$5–10/month total at light usage**, not a fixed price: Railway's [Hobby subscription contributes $5 toward resource usage](https://docs.railway.com/pricing/plans); CPU, memory, database storage, egress and taxes can increase the bill. Set provider usage alerts/limits after approval and observe actual usage. [Private database networking](https://docs.railway.com/pricing/faqs) avoids unnecessary public egress.
+The complete personal, noncommercial demo uses two Vercel Hobby projects and Neon Free PostgreSQL 17. No card, paid resources, trial credits or keep-alive traffic are required. Hobby quotas are shared across the two projects; exhaustion can interrupt the demo. Neon includes 1 GB storage, 100 CU-hours and 5 GB monthly egress, with mandatory sleep after five idle minutes and a short six-hour recovery window. Free services provide no application availability guarantee. Recheck provider terms before changing plans or usage. Sources: [Vercel Hobby](https://vercel.com/docs/plans/hobby), [Neon plans](https://neon.com/docs/introduction/plans).
 
-[Vercel Hobby is for personal noncommercial use](https://vercel.com/docs/plans/hobby). The owner must confirm this demo qualifies; commercial/portfolio lead-generation use may require a different approved plan and budget. No paid plan is activated here. No repository visibility change is needed.
+Render Free required card verification in the actual account, so it is excluded. serv00 registration must be manual under its terms and its account expires after 90 days without an owner login; it is not needed by this package. Vercel Container Registry storage has no verified permanent free allowance, so this package uses no container registry. Historical paid comparisons remain in [HOSTING_OPTIONS.md](HOSTING_OPTIONS.md); they authorize no spending.
 
-## Backend package
+## PHP function package
 
-From the repository root:
+Vercel backend root: `apps/api`; Node.js 22 is required by the pinned community runtime `vercel-php@0.9.0`. The [runtime's source and requirements](https://github.com/vercel-community/php) are separate from Laravel and must be reviewed when upgrading. The function region is Frankfurt (`fra1`), matching Neon. This is ordinary per-request Laravel, without Octane or a persistent application worker. The runtime launches its own PHP request server; the existing Apache Docker image is an alternative package, not a Vercel image.
 
-```sh
-docker build -f infra/production/Dockerfile -t brainsprint-api:release .
-```
+`vercel.json` sends every path through `api/index.php`. The adapter serves only allowlisted generated Filament CSS/JS/fonts under `public/`; real-path checks prevent traversal. Source, environment files, tests and dependencies are never public static routes. `/release.json` exposes only the public source revision for release confirmation. `/up` checks Laravel boot; `/admin/login` also checks session/database readiness.
 
-The image pins its PHP and Composer bases by digest and installs locked production dependencies. Apache serves **only `apps/api/public`**; Filament CSS/JS/fonts are published locally by the Composer script. The application has no development server, Octane, queue worker or scheduler process. The entrypoint validates minimum release settings, caches configuration using runtime secrets and then replaces itself with Apache. Docker/Railway stop uses Apache's graceful `SIGWINCH`; PHP requests have a 30-second execution bound. Health checks use `/up` (application boot, not a database readiness probe); Railway must route its `healthcheck.railway.app` Host and `PORT` to the container. See [Railway health checks](https://docs.railway.com/deployments/healthchecks).
+The builder installs `composer.lock` without development packages and invokes `scripts/vercel-build.php` through Composer's `vercel` script. That script verifies required extensions and publishes Filament assets without migrations or configuration publication. Compiled views and temporary files use `/tmp/brainsprint`; sessions, shared rate budgets and locks use PostgreSQL. No persistent disk or queue service is required. `.vercelignore` and function exclusions keep local credentials and build output out of uploads.
 
-Railway repository root: repository root, config: `railway.json`, Dockerfile: `infra/production/Dockerfile`, one replica. No start-command override is needed (`brainsprint-start` → `apache2-foreground`). Do not put secrets in build arguments. Do not enable automatic migrations or publication in the start command.
+Set production-only private backend variables:
 
-Create a PostgreSQL service only after approval. Use its **private** host/port/credentials for the backend; do not expose a public database listener for the application. The backend needs public HTTPS because Vercel's server-side proxy and the administrator use it; a public consumer API request requires the shared proxy secret before a session is created. Admin is accessed directly at `https://<backend>/admin`, never through the Next.js proxy.
-
-Use `infra/production/api.env.example` as the variable-name reference; all its values are placeholders:
-
-| Variables | Requirement |
+| Variables | Value/requirement |
 | --- | --- |
-| `APP_ENV`, `APP_DEBUG`, `APP_URL` | `production`, `false`, exact canonical backend HTTPS origin |
-| `APP_KEY` | Stable generated Laravel key, private runtime variable; generate with `php artisan key:generate --show` only into a secret manager, never chat/logs |
-| `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | `pgsql` and Railway private PostgreSQL connection; no production connection during local checks |
-| `SESSION_DRIVER`, `SESSION_LIFETIME`, `SESSION_ENCRYPT`, `SESSION_COOKIE` | `database`, `10080` minutes, `true`, `brainsprint_session` |
-| `SESSION_SECURE_COOKIE`, `SESSION_SAME_SITE` | `true`, `lax`; production also enforces secure, host-only cookies in code |
-| `CONSUMER_PROXY_SECRET` | Random secret at least 32 bytes; same backend/Vercel server variable, never `NEXT_PUBLIC_*` |
-| `CACHE_STORE`, `QUEUE_CONNECTION`, `LOG_CHANNEL`, `PORT` | `file`, `sync`, `stderr`, Railway's supplied numeric port (default 8080) |
-| `TRUSTED_PROXIES` | Optional comma-separated **verified ingress CIDRs**; empty means no forwarded headers are trusted. Only `X-Forwarded-Proto` can be trusted; forwarded host/IP/identity are never used |
-| `CONSUMER_REQUESTS_PER_MINUTE`, `ANALYTICS_REQUESTS_PER_MINUTE`, `CONSUMER_GLOBAL_REQUESTS_PER_MINUTE` | Default session budgets 60/40; global budgets 600 each, configurable integers at least 1 |
+| `APP_NAME`, `APP_ENV`, `APP_DEBUG`, `APP_URL` | `BrainSprint`, `production`, `false`, canonical backend HTTPS origin |
+| `APP_KEY` | Stable private Laravel key; never rotate during an ordinary release |
+| `DB_CONNECTION`, `DB_PORT`, `DB_URL` | `pgsql`, `5432`, direct Neon `/brainsprint` URI with `sslmode=verify-full` |
+| `PGOPTIONS` | `endpoint=<Neon endpoint ID>`; required because the community runtime's libpq lacks SNI |
+| `PGCONNECT_TIMEOUT` | `10` |
+| `SESSION_DRIVER`, `SESSION_LIFETIME`, `SESSION_ENCRYPT`, `SESSION_COOKIE` | `database`, `10080`, `true`, `brainsprint_session` |
+| `SESSION_SECURE_COOKIE`, `SESSION_SAME_SITE` | `true`, `lax` |
+| `CACHE_STORE`, `QUEUE_CONNECTION`, `LOG_CHANNEL` | `database`, `sync`, `stderr` |
+| `LOG_STDERR_FORMATTER` | `Monolog\Formatter\JsonFormatter`; compact private errors without oversized traces |
+| `CONSUMER_PROXY_SECRET` | Stable random private secret shared only with the frontend server |
+| `VERCEL_PHP_DOCROOT` | `public` |
 
-Production URLs are forced to the configured HTTPS backend origin, debug output is disabled and cookies are secure regardless of inbound HTTP at the terminator. Trust only verified proxy CIDRs if request-level HTTPS detection is required; confirm actual ingress headers after deployment. Do not set arbitrary forwarded identity or a wildcard forwarded-host trust. Keep default consumer `web` and separate `admin` guards; no consumer accounts exist. No cross-origin cookie sharing/CORS is needed: backend host-only cookies relayed by Next.js become frontend host-only cookies, while the `/admin` cookie remains on the backend.
+The adapter selects a readable operating-system CA bundle for libpq. Do not weaken TLS to work around endpoint routing or certificate errors. CLI release jobs use a current PostgreSQL client and an explicit OS CA path in `RELEASE_DATABASE_URL`; they do not need the legacy-runtime compatibility parameter.
 
-File rate limits and session locks assume **one backend replica** and a shared local container filesystem among Apache processes. Limits reset on deployment; this is practical application throttling, not bot-proof or an edge DDoS service. Public preview ranges stay fixed and synthetic-only. Additional edge protection and multiple replicas are not configured. `/up` is public. Keep the backend image filesystem ephemeral; persistence belongs in PostgreSQL, not local files.
+The proxy gate runs before anonymous sessions. Filament uses separate authentication and host-only `/admin` cookies; the consumer origin cannot proxy admin or Livewire routes. Production enforces secure cookies and the canonical HTTPS URL. No wildcard forwarded-host/IP trust is configured. Database cache tables share locks and throttles across function instances; they do not provide edge DDoS protection.
 
-## First release and later changes
+## Frontend package
 
-After approval, configure runtime secrets, take/verify a database backup when updating an existing installation, and run these **once inside the deployed backend container** before exposing the consumer site:
+Vercel frontend root: `apps/web`, Next.js, Node.js 24, install `npm ci --no-audit --no-fund`, build `npm run build`, region `fra1`. Use the full Next.js runtime, not static export. Set production-only server variables:
 
-```sh
-php artisan migrate --force
-php artisan db:seed --force
-php artisan analytics:seed-demo
-```
+- `API_ORIGIN`: exact backend HTTPS origin, without a trailing slash.
+- `WEB_ORIGIN`: exact canonical frontend HTTPS origin.
+- `CONSUMER_PROXY_SECRET`: the backend's stable private proxy secret.
+- `API_UPSTREAM_TIMEOUT_MS=45000`: bounded initial database/function wake tolerance.
 
-`db:seed` validates and appends the immutable content-addressed configuration; it never resets history. `analytics:seed-demo` appends an idempotent labeled synthetic daily sample and does not publish configuration. Refresh the sample manually as its seven-day public window ages out. On later releases, migrations run once before traffic; publish only a deliberately reviewed configuration. Never run `migrate:fresh`, `db:wipe`, or test suites against deployment databases.
+Never prefix these variables with `NEXT_PUBLIC_`. Preview environments receive no production database, key or proxy secret. Only release branches are enabled for automatic Git deployment. Consumer loading states explain a slow first request; saved progress is server-owned and independent of function instances.
 
-Administrator creation/rotation is an explicit operator operation, with no automatic bootstrap, default password, public registration or environment password:
+## Explicit release and rollback
 
-```sh
-php artisan admin:release operator@example.com --password-file=/run/secrets/brainsprint-admin
-```
+The production GitHub environment stores `RELEASE_APP_KEY`, `RELEASE_DATABASE_URL`, `RELEASE_PROXY_SECRET` and `RELEASE_ADMIN_PASSWORD`; environment variables hold `RELEASE_API_ORIGIN` and `RELEASE_ADMIN_EMAIL`. Test jobs never receive production credentials. `release-target.php` checks the dedicated Neon database name and verified TLS before operator work. The public repository uses standard GitHub-hosted runners, which have free runtime; paid runners are not enabled.
 
-Prepare/mount the secret through an approved confidential operator channel. It must be an absolute regular non-symlink file, no group/other permissions (0400/0600), at most 1024 bytes; its password must be **20–72 bytes** without control characters (a trailing newline is ignored). Never paste the password into command arguments, shell history, chat or deployment logs. Remove/unmount it immediately after successful use. Only its hash is persisted; provisioning authorizes the panel and revokes that user's stored sessions and remember token. Other admins/anonymous visitors are preserved. The local helper `admin:local` refuses production and still writes only ignored `.local/admin-access.json` (0600).
+`Release operations` supports manual `initialize`, `release`, `provision-admin` and `maintenance-preview`. Initialization runs migrations, append-only validated configuration publication and an idempotent labeled synthetic seed. Administrator provisioning reads a temporary mode-0600 password file, persists only its hash and removes the file. No default password, public registration or automatic bootstrap exists. Local access details belong only in ignored mode-0600 `.local/release-admin-access.json`.
 
-For rollback, retain the previous release image/commit and stable `APP_KEY`; redeploy compatible application code first. Do not automatically reverse migrations or delete immutable versions. Restore a verified database backup only by deliberate operator decision, acknowledging loss of later writes and possible restoration of previously deleted data. Backup encryption, retention/expiry and a restore rehearsal must be configured/confirmed with the provider before publication; they are not claimed here. Runtime key rotation invalidates encrypted sessions and needs its own plan.
+Automatic publication is gated by repository variable `RELEASE_DEPLOY_ENABLED=true` and a successful `Funnel checks` run for this repository's `main` commit. Superseded automatic runs stop. A serialized release applies migrations/publication, then advances `codex/release-api` to that exact checked SHA. Vercel production tracks this branch. The publisher waits for the matching public revision and healthy Laravel/admin login before advancing `codex/release-web`; the frontend project tracks that branch. No long-lived Vercel account token or production deploy credential is stored in GitHub. The official GitHub App is restricted to this repository. Normal branches/PRs cannot deploy to these production environments.
 
-## Frontend
+Never run test suites, `migrate:fresh`, `db:wipe` or a reset against Neon. Keep migrations compatible with the currently served revision. Take a verified encrypted backup before an operator change that can affect existing data. To roll back, redeploy a compatible prior code revision with stable runtime keys; do not automatically reverse migrations or erase immutable configuration/history. Restoring a database is a separate deliberate operator decision because later writes can be lost.
 
-Vercel root directory: `apps/web`, framework Next.js, Node.js 24, install `npm ci`, build `npm run build`, default Vercel runtime. No static export. Set production **server-only** variables:
+## Daily maintenance and backups
 
-- `API_ORIGIN=https://<backend-origin>` (no path/trailing slash).
-- `WEB_ORIGIN=https://<frontend-origin>` (exact canonical origin for write-origin validation).
-- `CONSUMER_PROXY_SECRET=<same private backend secret>`.
+`Release maintenance`, enabled by `RELEASE_MAINTENANCE_ENABLED=true`, runs daily at 03:23 UTC (10:23 Vietnam time) and supports manual dispatch. GitHub can delay scheduled jobs and disables public-repository schedules after prolonged repository inactivity (normally 60 days); inspect Actions failures and re-enable a disabled schedule ([GitHub schedule policy](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows)). This does not keep Vercel/Neon awake between real requests.
 
-Do not add `NEXT_PUBLIC_` to these names. Choose exact origins before enabling traffic; update `WEB_ORIGIN` after approved domain changes. Preview deployments must not silently write to production: give them isolated data/secrets and their own exact origin or leave consumer API unavailable. No production access for previews is configured. The proxy allowlists only existing consumer routes and synthetic summary; admin/Livewire cannot pass it. Private responses and exceptions are no-store; public HTML contains no embedded session state. Verify actual HTTPS, cookie scope, origin/CSRF rejection, assets and admin isolation after deployment, before announcing launch.
+Before retention, the job creates a compressed PostgreSQL dump using the pinned PostgreSQL 17.6 client image and encrypts it with OpenSSL CMS AES-256-GCM and RSA-OAEP/SHA-256. Only the public recipient certificate is committed. The private recovery key exists only in ignored mode-0600 `.local/release-backup-key.pem`; preserve an independent owner-controlled copy. Losing that key makes encrypted artifacts unrecoverable. Runtime keys/credentials also need their own private recovery copy; the database dump does not replace them.
 
-## Lifecycle and maintenance
+Only ciphertext is uploaded as `release-backup-<run ID>`, retained for three days. A 20 MiB dump cap and a 100 MiB repository artifact guard bound storage; excessive size stops the job before retention. All backup artifacts in this public repository must be assumed downloadable by others; confidentiality depends on the private recovery key. The upload must succeed before deletion runs. Plaintext exists only in a mode-0700 temporary directory and is removed automatically; no secrets or raw dump are printed.
 
-The quiet consumer disclosure offers confirmation/cancel plus permanent deletion of **the current server-owned anonymous visitor's** run (answers/result) and all events, including landing-only exposures and legacy linked events. It invalidates the consumer session/CSRF and returns a new cookie. Admin authentication and other visitors are untouched. Client analytics retries settle before deletion; after returning to the landing, a new anonymous visit can collect new activity. Cleared-cookie/unlinked browsers cannot be recovered or deleted through this action. There is no account or recovery platform.
+The job then executes `privacy:retention --execute --limit=500` and refreshes the labeled daily synthetic analytics sample. Retention preserves configurations, administrators and active visitors, and removes visitor groups only after more than 30 days without recorded activity. Sessions expire after their configured inactivity; expired shared cache/locks are also pruned with expiration rechecked at deletion. Each category is bounded by the limit. `privacy:retention --limit=500` previews without deleting. Application activity can be newer than an exposure, so an old landing event alone does not make an active visitor eligible.
 
-`privacy:retention` previews by default. Runs/events, including labeled synthetic samples, expire strictly **more than 30 days after the visitor's latest stored activity**: run creation/update, restoring an owned run by bootstrap/show, or any associated event (including legacy events). Fresh activity preserves the visitor's old landing exposure too. Orphan landing-only visitors use their latest event; old unattributable events use their own timestamp. Synthetic samples use the same policy and can be explicitly reseeded after expiry. Configurations/admin users are retained. Consumer/admin sessions expire separately after configured seven-day/two-hour inactivity; boundaries are exclusive, so unexpired sessions survive. Normal request-based session garbage collection is disabled so maintenance has one explicit policy.
+For recovery, download the desired encrypted artifact to a private local directory, then decrypt with OpenSSL 3:
 
 ```sh
-php artisan privacy:retention --limit=500
-# Only after reviewing preview and backup policy:
-php artisan privacy:retention --execute --limit=500
+umask 077
+openssl cms -decrypt -binary -inform DER -in brainsprint-backup.cms \
+  -inkey .local/release-backup-key.pem -out .local/recovery.dump
 ```
 
-The limit is 1–1000 visitor groups, plus that many expired sessions **per table** and unattributed events; run-associated events are bounded by the funnel's finite semantic identities, rather than split across visits. Each visitor is transactionally rechecked under the same PostgreSQL advisory lock as API requests. Session deletion rechecks expiry. The command preserves configuration versions, administrators and unrelated/fresh data. Invoke once daily through an approved external one-shot operator job against the backend container, repeating bounded batches if needed. **No recurring invocation is configured yet**; the UI says eligibility rather than promising exact automatic removal. No permanently running worker is needed. Backup copies follow the separately approved backup expiry policy.
+Restore first into a newly created isolated disposable PostgreSQL database using `pg_restore --exit-on-error --no-owner --no-acl`, validate the configuration/sample/admin counts and remove plaintext afterward. Never point a rehearsal at existing development or production data. The encrypted artifact is authenticated: decryption must fail if it has been altered. Actual rehearsal evidence and schedule acceptance are recorded in the implementation plan.
 
 ## Reproduce the local production-package check
 
