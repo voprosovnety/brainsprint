@@ -15,3 +15,11 @@ apps/api/bootstrap/cache/*
 !apps/api/composer.lock
 !infra/
 !infra/production/**
+# Directory allow rules above also include descendants. Exclude local material last.
+apps/api/.env*
+apps/api/vendor/
+apps/api/tests/
+apps/api/storage/
+apps/api/node_modules/
+apps/api/.phpunit*
+apps/api/phpunit.xml

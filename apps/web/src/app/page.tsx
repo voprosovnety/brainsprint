@@ -5,6 +5,7 @@ import { beforeStart, campaign, recordView } from "@/lib/analytics";
 import { Arrow, Grid, Logic, Memory, Pattern } from "@/components/challenges";
 
 import { Privacy } from "@/components/privacy";
+import { WaitingNotice } from "@/components/waiting-notice";
 
 const categories = [
   { icon: "▦", title: "Remember", description: "Watch a pattern. Bring it back.", type: "visual_memory" },
@@ -162,6 +163,7 @@ export default function Home() {
     <header className="site-header"><a className="brand" href="/?screen=landing" aria-label="BrainSprint home" onClick={e => { e.preventDefault(); show("landing"); }}><span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>brain<span>sprint</span><span className="brand-dot">.</span></a><span className="header-note">A little space for your mind</span><span className="demo-tag">The demo edition</span></header>
     <main>
       {deleted && <p className="deletion-success" role="status">Your saved data was deleted. This is a new anonymous visit.</p>}
+      <WaitingNotice active={busy} />
       {!bootstrap ? <section className="loading-panel"><div className="tiny-pattern" aria-hidden="true">✦</div><h1 ref={heading} tabIndex={-1}>A moment to settle in.</h1>{busy ? <p role="status">Preparing your challenge…</p> : <><p role="alert">{error}</p><button className="button" onClick={() => load(true)}>Try again <Arrow /></button></>}</section> : <>
         {view === "landing" && config && landing && <>
           <section className={`hero landing-${bootstrap.experiment.variant.toLowerCase()}`}><div className="hero-copy"><p className="eyebrow"><span />{landing.eyebrow}</p><h1 ref={heading} tabIndex={-1}>{landing.title}</h1><p className="intro">{landing.description}</p><button className="button" disabled={busy} onClick={start}>{busy ? "Opening your challenge…" : run ? run.demo_completed ? "Revisit the demo" : result && legacy ? "View my saved result" : "Continue my demo" : landing.cta}<Arrow /></button><p className="cta-note">{legacy ? "A memory preview" : "About 3–4 minutes"}<span>·</span>No sign-up<span>·</span>Just curiosity</p></div>

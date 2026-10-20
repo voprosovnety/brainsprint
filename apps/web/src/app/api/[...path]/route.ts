@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 120;
+const configuredTimeout = Number(process.env.API_UPSTREAM_TIMEOUT_MS || 12000);
+const upstreamTimeout = Number.isFinite(configuredTimeout)
+  ? Math.min(90000, Math.max(12000, configuredTimeout))
+  : 12000;
 const run = "[0-9a-f-]{36}";
 const routes = {
   GET: new RegExp(`^v1/(bootstrap|demo-analytics|runs/${run})$`),
@@ -67,7 +72,7 @@ async function proxy(
         body,
         cache: "no-store",
         redirect: "error",
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(upstreamTimeout),
       },
     );
     const response = new NextResponse(upstream.body, {

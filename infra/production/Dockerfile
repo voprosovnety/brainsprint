@@ -10,6 +10,7 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
     && COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader \
     && chown -R www-data:www-data storage bootstrap/cache
 COPY infra/production/apache.conf /etc/apache2/sites-available/000-default.conf
+COPY infra/production/apache-limits.conf /etc/apache2/conf-enabled/brainsprint-limits.conf
 COPY infra/production/php.ini /usr/local/etc/php/conf.d/brainsprint.ini
 COPY infra/production/start.sh /usr/local/bin/brainsprint-start
 RUN chmod 755 /usr/local/bin/brainsprint-start && sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf

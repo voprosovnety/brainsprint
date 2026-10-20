@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DemoAnalytics, formatRate } from "../../lib/demo-analytics";
+import { WaitingNotice } from "../../components/waiting-notice";
 import "./analytics.css";
 
 const stages = [
@@ -19,7 +20,7 @@ export default function DemoAnalyticsPage() {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 14000);
+    const timeout = setTimeout(() => controller.abort(), 100000);
     let active = true;
     setStatus("loading");
     fetch("/api/v1/demo-analytics", { cache: "no-store", signal: controller.signal })
@@ -36,6 +37,7 @@ export default function DemoAnalyticsPage() {
       <div className="analytics-heading"><p className="analytics-kicker">Demo analytics <span>● Synthetic data</span></p><h1>A small look<br />at the journey.</h1><p>From a moment of curiosity to the final screen. Explore an illustrative sample of the BrainSprint funnel, built from synthetic scenarios.</p></div>
       <aside className="analytics-note"><strong>Made-up journeys. Shared definitions.</strong><p>These are seeded scenarios and local demo activity, not real visitors or evidence of cognitive ability. The same metric definitions power the private dashboard.</p></aside>
       {status === "loading" && <section className="analytics-state" role="status" aria-live="polite"><span className="analytics-loader" aria-hidden="true" /><h2>Gathering the sample…</h2><p>Loading the last seven days of synthetic journeys.</p></section>}
+      <WaitingNotice active={status === "loading"} />
       {status === "error" && <section className="analytics-state" role="alert"><h2>The sample could not load.</h2><p>Try again in a moment. You can still return to the challenge.</p><button className="button" onClick={() => setAttempt(n => n + 1)}>Try again</button></section>}
       {status === "ready" && data && <>
         <div className="analytics-period"><span>{date(data.cohort.from)} – {date(data.cohort.to_exclusive)} · UTC</span><span>7-day cohort · {data.cohort.observation_hours}-hour observation window</span></div>

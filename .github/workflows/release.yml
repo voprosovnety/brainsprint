@@ -1,0 +1,90 @@
+name: Release operations
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Explicit operation on the release database
+        required: true
+        type: choice
+        options: [initialize, release, provision-admin, maintenance-preview]
+  workflow_run:
+    workflows: [Funnel checks]
+    branches: [main]
+    types: [completed]
+permissions:
+  contents: read
+concurrency:
+  group: brainsprint-release-database
+  cancel-in-progress: false
+jobs:
+  operate:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      APP_URL: ${{ vars.RELEASE_API_ORIGIN }}
+      APP_KEY: ${{ secrets.RELEASE_APP_KEY }}
+      DB_CONNECTION: pgsql
+      DB_PORT: '5432'
+      DB_URL: ${{ secrets.RELEASE_DATABASE_URL }}
+      SESSION_DRIVER: database
+      SESSION_ENCRYPT: 'true'
+      CACHE_STORE: file
+      LOG_CHANNEL: stderr
+      CONSUMER_PROXY_SECRET: ${{ secrets.RELEASE_PROXY_SECRET }}
+      PGCONNECT_TIMEOUT: '10'
+      PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, mbstring, intl, bcmath, zip
+          coverage: none
+          tools: composer:v2
+      - run: composer install --working-dir=apps/api --no-dev --no-interaction --prefer-dist --no-progress
+      - name: Guard release target
+        run: php infra/production/release-target.php
+      - name: Apply explicit migrations and configuration publication
+        if: github.event_name == 'workflow_run' || inputs.operation == 'initialize' || inputs.operation == 'release'
+        working-directory: apps/api
+        run: |
+          php artisan migrate --force
+          php artisan db:seed --force
+      - name: Seed the labeled synthetic sample
+        if: inputs.operation == 'initialize'
+        run: php apps/api/artisan analytics:seed-demo
+      - name: Provision administrator through a private secret file
+        if: inputs.operation == 'provision-admin'
+        env:
+          RELEASE_ADMIN_PASSWORD: ${{ secrets.RELEASE_ADMIN_PASSWORD }}
+          RELEASE_ADMIN_EMAIL: ${{ vars.RELEASE_ADMIN_EMAIL }}
+        run: |
+          umask 077
+          secret_file="$RUNNER_TEMP/brainsprint-admin"
+          trap 'rm -f "$secret_file"' EXIT
+          printf '%s' "$RELEASE_ADMIN_PASSWORD" > "$secret_file"
+          php apps/api/artisan admin:release "$RELEASE_ADMIN_EMAIL" --password-file="$secret_file"
+      - name: Preview retention without deleting
+        if: inputs.operation == 'maintenance-preview'
+        run: php apps/api/artisan privacy:retention --limit=500
+      - name: Deploy the checked commit to Render Free
+        if: github.event_name == 'workflow_run' || inputs.operation == 'release'
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          RELEASE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo 'Render deploy hook is not configured; release deployment is unavailable.'
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 30 --output /dev/null "${RENDER_DEPLOY_HOOK}&ref=${RELEASE_COMMIT}"
