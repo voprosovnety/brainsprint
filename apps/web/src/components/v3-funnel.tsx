@@ -41,6 +41,7 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   const viewRef = useRef(view);
   const headingRegion = useRef<HTMLDivElement>(null);
   const errorRegion = useRef<HTMLDivElement>(null);
+  const information = useRef<HTMLDialogElement>(null);
   function show(id: string, replace = false) {
     const token = ++navigation.current;
     const current = runRef.current;
@@ -103,8 +104,13 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   async function save(answer: V3Answer, step = viewRef.current) {
     const current = runRef.current;
     if (!current || writing.current || current.demo_completed || step !== current.current_step
+      || navigating || imageFailure
       || (viewRef.current !== step && pending?.step !== step)) return;
     const source = current.configuration.steps.find(screen => screen.id === step);
+    if (!source) return;
+    // Validate against this question before any optimistic navigation.
+    if ((source.type === "single_choice" || source.type === "scale")
+      && (!("choice" in answer) || !source.options?.some(option => option.id === answer.choice))) return;
     // Only deterministic, noncommercial presentation can lead server confirmation.
     // The next answer stays locked until this write succeeds; private report/offer state is never projected.
     const target = current.configuration.steps.find(screen => screen.id === source?.next);
@@ -181,16 +187,21 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
     // Progress writes take priority over the small, metadata-only exposure outbox.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, run?.id, navigating]);
-  return <div className="v3-shell">
-    {!commercial && <header className="v3-header"><div className="v3-header-row"><a className="v3-brand" href="/" onClick={e => e.preventDefault()} aria-label="BrainSprint"><span className="v3-brand-icon" aria-hidden="true">✳</span>BrainSprint</a><span className="v3-timer" aria-label={`Elapsed time ${elapsed(run?.started_at, now)}`}><span aria-hidden="true">◷</span> {elapsed(run?.started_at, now)}</span></div><div className="v3-progress" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={responses.length} aria-valuenow={completed}><span style={{ width: `${progress}%` }} /></div></header>}
+  return <div className={`v3-shell${commercial ? "" : " v3-quiz-shell"}`}>
+    {!commercial && <header className="v3-header"><div className="v3-header-row"><a className="v3-brand" href="/" onClick={e => e.preventDefault()} aria-label="BrainSprint"><span className="v3-brand-icon" aria-hidden="true">✳</span>BrainSprint</a><div className="v3-header-tools"><span className="v3-timer" aria-label={`Elapsed time ${elapsed(run?.started_at, now)}`}><span aria-hidden="true">◷</span> {elapsed(run?.started_at, now)}</span><button type="button" className="v3-info-button" aria-label="About this demo and your saved progress" onClick={() => information.current?.showModal()}>ⓘ</button></div></div><div className="v3-progress" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={responses.length} aria-valuenow={completed}><span style={{ width: `${progress}%` }} /></div></header>}
     <main ref={headingRegion} className={`${commercial ? "v3-commerce-main" : "v3-main"}${previewing || navigating || imageFailure ? " v3-inflight-preview" : ""}`}>
-      {deleted && <p className="v3-notice" role="status">Your saved data was deleted. This is a new anonymous visit.</p>}
+      {deleted && <p className={`v3-notice${commercial ? "" : " v3-sr-only"}`} role="status">Your saved data was deleted. This is a new anonymous visit.</p>}
       {screen && !screenAssetsReady(screen) ? <section className="v3-question v3-saved" aria-busy="true"><h1>Opening your question…</h1><p role="status">Preparing the illustration.</p></section> : screen ? saved && screen.type !== "final" ? <SavedScreen screen={screen} run={run!} onContinue={() => show(run!.current_step)} /> : commercial && run ? <V3Commerce key={screen.id} screen={screen} run={run} busy={locked} onSubmit={answer => { void save(answer, screen.id); }} /> : <V3Quiz key={screen.id} screen={screen} busy={locked} saving={busy && !previewing} draft={pending?.step === screen.id ? pending.answer : undefined} onSubmit={answer => { void save(answer, screen.id); }} progress={progress} /> : <section className="v3-loading"><h1>Your saved progress is here.</h1><p>Restore your current screen to continue.</p><button className="v3-primary" disabled={busy} onClick={restore}>Restore progress</button></section>}
       {imageFailure && <div className="v3-error" role="alert" tabIndex={-1} ref={errorRegion}><p>{imageFailure.message}</p><div><button className="v3-primary" onClick={() => show(imageFailure.step, true)}>Retry illustration</button><button className="v3-text-button" disabled={busy} onClick={restore}>Restore saved progress</button></div></div>}
       {error && <div className="v3-error" role="alert" tabIndex={-1} ref={errorRegion}><p>{error}</p>{pending && <p>Your selected answer is kept for an identical retry.</p>}<div><button className="v3-primary" disabled={busy} onClick={() => pending ? void save(pending.answer, pending.step) : run ? void restore() : void start()}>{busy ? "Saving…" : pending ? "Retry saving" : "Try again"}</button>{run && <button className="v3-text-button" disabled={busy} onClick={restore}>Restore saved progress</button>}</div></div>}
-      {run && !commercial && <nav className="v3-history" aria-label="Saved progress">{saved ? <button className="v3-text-button" disabled={busy} onClick={() => show(run.current_step)}>Return to current screen</button> : <span>{confirmed} of {responses.length} responses saved</span>}</nav>}
     </main>
-    {!commercial && <><div className="v3-privacy"><Privacy locked={locked} /></div><footer className="v3-footer"><span>BrainSprint © 2026</span><a href="/demo-analytics">Sample analytics ↗</a></footer></>}
+    {!commercial && <dialog ref={information} className="v3-dialog v3-information" aria-labelledby="v3-information-title">
+      <h2 id="v3-information-title">About BrainSprint</h2>
+      {deleted && <p>Your saved data was deleted. This is a new anonymous visit.</p>}
+      {run && <nav className="v3-history" aria-label="Saved progress">{saved ? <button className="v3-text-button" disabled={locked} onClick={() => { information.current?.close(); show(run.current_step); }}>Return to current screen</button> : <span>{confirmed} of {responses.length} responses saved</span>}</nav>}
+      <div className="v3-privacy"><Privacy locked={locked} /></div><footer className="v3-footer"><span>BrainSprint © 2026</span><a href="/demo-analytics">Sample analytics ↗</a></footer>
+      <button type="button" className="v3-primary" onClick={() => information.current?.close()}>Back to my question</button>
+    </dialog>}
   </div>;
 }
 function SavedScreen({ screen, run, onContinue }: { screen: V3Screen; run: V3Run; onContinue: () => void }) {

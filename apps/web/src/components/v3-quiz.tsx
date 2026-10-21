@@ -38,17 +38,21 @@ export function V3Quiz(props: Props) {
   if (screen.type === "processing") return <Processing {...props} />;
   if (screen.type === "email") return <Email {...props} />;
   return <section className={`v3-question v3-${screen.type}`}>
+    <div className="v3-question-body">
     <div className="v3-question-intro"><p className="v3-eyebrow">{screen.type === "word_intro" ? "A little exercise in remembering" : screen.type === "confirmation" ? "Your answers, all together" : "A moment of perspective"}</p><h1>{screen.title}</h1><p>{screen.description}</p></div>
     {screen.type === "word_intro" ? <div className="v3-word-card"><span aria-hidden="true" className="v3-word-spark">✳</span><strong>{screen.word}</strong><span>Keep it in mind for later</span></div> : screen.art ? <img className="v3-community-art" src={screen.art} decoding="sync" loading="eager" alt="People connected by their curiosity, an original illustration" /> : screen.type === "confirmation" ? <div className="v3-confirmation-art"><span aria-hidden="true">✓</span><strong>41 responses ready</strong><p>Words, numbers, shapes — and your perspective.</p></div> : <div className="v3-break-art" aria-hidden="true"><i /><i /><i /><span>✳</span></div>}
     {screen.id === "emerging-profile" && <div className="v3-interstitial-progress"><span style={{ width: `${props.progress}%` }} /><p>{props.progress}% of your quiz responses are answered</p></div>}
     {screen.id === "nearly-there" && <p className="v3-soft-note">{props.progress}% of your responses answered</p>}
-    <div className="v3-actions"><button className="v3-primary" disabled={props.busy} onClick={() => props.onSubmit({ acknowledged: true })}>{props.saving ? "Saving…" : screen.cta || "Continue"}<span aria-hidden="true">→</span></button>{screen.type === "word_intro" && <p>One task at a time. Go at your own pace.</p>}</div>
+    {screen.type === "word_intro" && <p className="v3-soft-note">One task at a time. Go at your own pace.</p>}
+    </div>
+    <div className="v3-actions"><button className="v3-primary" disabled={props.busy} onClick={() => props.onSubmit({ acknowledged: true })}>{props.saving ? "Saving…" : screen.cta || "Continue"}<span aria-hidden="true">→</span></button></div>
   </section>;
 }
 function Choices({ screen, busy, saving, onSubmit, draft }: Props) {
-  const [selected, setSelected] = useState(draft && "choice" in draft ? draft.choice : "");
+  const [selection, setSelection] = useState({ step: screen.id, choice: draft && "choice" in draft ? draft.choice : "" });
   const group = useRef<HTMLDivElement>(null);
   const options = screen.options || [];
+  const selected = selection.step === screen.id && options.some(option => option.id === selection.choice) ? selection.choice : "";
   const image = screen.presentation === "image";
   const objects = screen.presentation === "objects";
   const description = diagrams[keyFor(screen)];
@@ -56,21 +60,23 @@ function Choices({ screen, busy, saving, onSubmit, draft }: Props) {
     if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || busy) return;
     event.preventDefault();
     const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : (index + (["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : -1) + options.length) % options.length;
-    setSelected(options[next].id);
+    setSelection({ step: screen.id, choice: options[next].id });
     group.current?.querySelectorAll<HTMLButtonElement>("[role=radio]")[next]?.focus();
   }
-  return <section className={`v3-question ${image ? "v3-visual-question" : ""}`} aria-busy={saving}>
+  return <section className={`v3-question ${image ? "v3-visual-question" : ""} ${screen.role === "demographic" ? "v3-demographic-question" : ""}`} aria-busy={saving}>
+    <div className="v3-question-body">
     <div className="v3-question-intro"><p className="v3-eyebrow">{screen.role === "demographic" ? "A little about you" : screen.type === "scale" ? "Your perspective" : image ? "Look a little closer" : "Follow your curiosity"}</p><h1 id="v3-question-title">{screen.title}</h1><p>{screen.description}</p></div>
     {screen.asset && <div className="v3-puzzle"><img src={screen.asset} decoding="sync" loading="eager" alt={description?.prompt || screen.asset_alt || "An illustrated landmark"} /></div>}
     <div ref={group} className={`v3-options ${image ? "v3-image-options" : objects ? "v3-object-options" : screen.type === "scale" ? "v3-scale-options" : ""}`} role="radiogroup" aria-labelledby="v3-question-title">
-      {options.map((option, i) => <button key={option.id} type="button" role="radio" aria-checked={selected === option.id} disabled={busy} tabIndex={selected ? selected === option.id ? 0 : -1 : i === 0 ? 0 : -1} onKeyDown={e => keyboard(e, i)} className={`v3-option ${selected === option.id ? "is-selected" : ""}`} onClick={() => { setSelected(option.id); onSubmit({ choice: option.id }); }}>
+      {options.map((option, i) => <button key={option.id} type="button" role="radio" aria-checked={selected === option.id} disabled={busy} tabIndex={selected ? selected === option.id ? 0 : -1 : i === 0 ? 0 : -1} onKeyDown={e => keyboard(e, i)} className={`v3-option ${selected === option.id ? "is-selected" : ""}`} onClick={() => { if (busy) return; setSelection({ step: screen.id, choice: option.id }); onSubmit({ choice: option.id }); }}>
         {option.asset && <img src={option.asset} decoding="sync" loading="eager" alt={description?.options[i] || `Option ${option.label}`} />}
         {objects && <ObjectDrawing label={option.label} />}
         <span>{screen.type === "scale" && <span className="v3-scale-number" aria-hidden="true">{i + 1}</span>}{option.label}</span><span className="v3-option-indicator" aria-hidden="true">{selected === option.id ? "✓" : ""}</span>
       </button>)}
     </div>
     <p className="v3-selection-hint">Choose an answer to continue. Use arrow keys to select, then Continue.</p>
-    <div className="v3-actions"><button className="v3-primary" disabled={busy || !selected} onClick={() => onSubmit({ choice: selected })}>{saving ? "Saving your answer…" : "Continue"}<span aria-hidden="true">→</span></button></div>
+    </div>
+    <div className="v3-actions"><button className="v3-primary" disabled={busy || !selected} onClick={() => { if (!busy && selected) onSubmit({ choice: selected }); }}>{saving ? "Saving your answer…" : "Continue"}<span aria-hidden="true">→</span></button></div>
   </section>;
 }
 function Reveal({ screen, busy, saving, onSubmit }: Props) {
@@ -81,7 +87,7 @@ function Reveal({ screen, busy, saving, onSubmit }: Props) {
     return () => clearInterval(interval);
   }, []);
   useEffect(() => { if (remaining === 0 && !busy && !submitted.current) { submitted.current = true; onSubmit({ acknowledged: true }); } }, [remaining, busy, onSubmit]);
-  return <section className="v3-question v3-reveal"><div className="v3-question-intro"><p className="v3-eyebrow">A moment for your memory</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-digits" aria-label={remaining ? screen.digits?.split("").join(" ") : "The digits are now hidden"}>{remaining ? screen.digits : "•".repeat(screen.digits?.length || 5)}</div><p className="v3-soft-note" role="status">{remaining ? `${remaining} seconds to remember` : "Your next question is ready"}</p><div className="v3-reveal-track" aria-hidden="true"><span style={{ width: `${remaining / (screen.reveal_seconds || 5) * 100}%` }} /></div><div className="v3-actions"><button className="v3-primary" disabled={busy || remaining > 0} onClick={() => onSubmit({ acknowledged: true })}>{saving ? "Saving…" : remaining ? "Keep the digits in mind" : "Continue"}</button></div></section>;
+  return <section className="v3-question v3-reveal"><div className="v3-question-body"><div className="v3-question-intro"><p className="v3-eyebrow">A moment for your memory</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-digits" aria-label={remaining ? screen.digits?.split("").join(" ") : "The digits are now hidden"}>{remaining ? screen.digits : "•".repeat(screen.digits?.length || 5)}</div><p className="v3-soft-note" role="status">{remaining ? `${remaining} seconds to remember` : "Your next question is ready"}</p><div className="v3-reveal-track" aria-hidden="true"><span style={{ width: `${remaining / (screen.reveal_seconds || 5) * 100}%` }} /></div></div><div className="v3-actions"><button className="v3-primary" disabled={busy || remaining > 0} onClick={() => onSubmit({ acknowledged: true })}>{saving ? "Saving…" : remaining ? "Keep the digits in mind" : "Continue"}</button></div></section>;
 }
 function Processing({ screen, busy, saving, onSubmit, draft }: Props) {
   const [seconds, setSeconds] = useState(draft ? screen.duration_seconds || 5 : 0);
@@ -131,13 +137,22 @@ function Processing({ screen, busy, saving, onSubmit, draft }: Props) {
     if (preferences.focus && preferences.practice) onSubmit({ focus: preferences.focus, practice: preferences.practice });
     else if (!prompts.length) onSubmit({ acknowledged: true });
   }
-  return <section className="v3-question v3-processing"><div className="v3-question-intro"><p className="v3-eyebrow">Your report, coming together</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-preparation-orbit" aria-hidden="true"><i /><i /><i /><strong>✳</strong></div><div className="v3-processing-progress" role="progressbar" aria-label="Preparing your report" aria-valuenow={Math.round(seconds / duration * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${seconds / duration * 100}%` }} /></div><ol className="v3-stages">{screen.stages?.map((label, i) => <li key={label} className={i <= stage ? "active" : ""}><span aria-hidden="true">{i < stage || complete ? "✓" : i === stage ? "◌" : "○"}</span>{label}</li>)}</ol><p className="v3-sr-only" role="status">{complete ? "Your report preparation is complete" : screen.stages?.[stage]}</p><button className="v3-text-button v3-how" disabled={busy} onClick={openInformation}>ⓘ About your report</button><div className="v3-actions"><button className="v3-primary" disabled={busy || !complete} onClick={finish}>{saving ? "Saving…" : complete ? "Continue" : "Preparing your report…"}<span aria-hidden="true">→</span></button></div>
+  return <section className="v3-question v3-processing"><div className="v3-question-body"><div className="v3-question-intro"><p className="v3-eyebrow">Your report, coming together</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-preparation-orbit" aria-hidden="true"><i /><i /><i /><strong>✳</strong></div><div className="v3-processing-progress" role="progressbar" aria-label="Preparing your report" aria-valuenow={Math.round(seconds / duration * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${seconds / duration * 100}%` }} /></div><ol className="v3-stages">{screen.stages?.map((label, i) => <li key={label} className={i <= stage ? "active" : ""}><span aria-hidden="true">{i < stage || complete ? "✓" : i === stage ? "◌" : "○"}</span>{label}</li>)}</ol><p className="v3-sr-only" role="status">{complete ? "Your report preparation is complete" : screen.stages?.[stage]}</p><button className="v3-text-button v3-how" disabled={busy} onClick={openInformation}>ⓘ About your report</button></div><div className="v3-actions"><button className="v3-primary" disabled={busy || !complete} onClick={finish}>{saving ? "Saving…" : complete ? "Continue" : "Preparing your report…"}<span aria-hidden="true">→</span></button></div>
     <dialog ref={dialog} className="v3-dialog" aria-labelledby="v3-dialog-title" onCancel={event => { if (nextPrompt) event.preventDefault(); else closeInformation(); }} onClose={closeInformation}>{nextPrompt ? <><span className="v3-dialog-symbol" aria-hidden="true">✧</span><p className="v3-eyebrow">One quick question</p><h2 id="v3-dialog-title">{nextPrompt.title}</h2><p>This helps save your preferences alongside your report.</p><div className="v3-modal-options"><button className="v3-primary" onClick={() => setPreferences(value => ({ ...value, [nextPrompt.id]: "yes" }))}>Yes, I would</button><button className="v3-secondary" onClick={() => setPreferences(value => ({ ...value, [nextPrompt.id]: "no" }))}>No, thank you</button></div></> : <><h2 id="v3-dialog-title">A fresh perspective, for curiosity.</h2><p>Your report is an illustrative sample. It is independent of answer correctness and does not measure intelligence or cognitive ability. Your two preferences are saved with this visit.</p><button className="v3-primary" onClick={closeInformation}>Got it</button></>}</dialog>
   </section>;
 }
 function Email({ screen, busy, saving, onSubmit, draft }: Props) {
   const [email, setEmail] = useState(draft && "email" in draft ? draft.email || "" : "");
-  return <section className="v3-question v3-email"><div className="v3-question-intro"><p className="v3-eyebrow">A place for your perspective</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-envelope" aria-hidden="true"><span>✳</span></div><form onSubmit={e => { e.preventDefault(); onSubmit({ email: email.trim() || null }); }}><label htmlFor="report-email">Email address <span>(optional)</span></label><input id="report-email" type="email" inputMode="email" autoComplete="email" maxLength={254} placeholder={screen.sample_email || "reader@example.com"} value={email} disabled={busy} onChange={e => setEmail(e.target.value)} /><button type="button" className="v3-text-button" disabled={busy} onClick={() => setEmail(screen.sample_email || "reader@example.com")}>Use the sample address</button><p className="v3-email-note">Your report opens in this browser. This address stays with your saved visit; no email is sent.</p><div className="v3-actions"><button className="v3-primary" type="submit" disabled={busy}>{saving ? "Saving…" : screen.cta || "Continue"}<span aria-hidden="true">→</span></button><button className="v3-text-button" type="button" disabled={busy} onClick={() => onSubmit({ email: null })}>Skip for now</button></div></form></section>;
+  return <section className="v3-question v3-email"><form onSubmit={e => { e.preventDefault(); if (!busy) onSubmit({ email: email.trim() || null }); }}>
+    <div className="v3-question-body">
+      <div className="v3-question-intro"><p className="v3-eyebrow">A place for your perspective</p><h1>{screen.title}</h1><p>{screen.description}</p></div>
+      <div className="v3-envelope" aria-hidden="true"><span>✳</span></div>
+      <label htmlFor="report-email">Email address <span>(optional)</span></label><input id="report-email" type="email" inputMode="email" autoComplete="email" maxLength={254} placeholder={screen.sample_email || "reader@example.com"} value={email} disabled={busy} onChange={e => setEmail(e.target.value)} />
+      <button type="button" className="v3-text-button" disabled={busy} onClick={() => setEmail(screen.sample_email || "reader@example.com")}>Use the sample address</button>
+      <p className="v3-email-note">Your report opens in this browser. This address stays with your saved visit; no email is sent.</p>
+    </div>
+    <div className="v3-actions"><button className="v3-text-button" type="button" disabled={busy} onClick={() => { if (!busy) onSubmit({ email: null }); }}>Skip for now</button><button className="v3-primary" type="submit" disabled={busy}>{saving ? "Saving…" : screen.cta || "Continue"}<span aria-hidden="true">→</span></button></div>
+  </form></section>;
 }
 function ObjectDrawing({ label }: { label: string }) {
   const shapes: Record<string, ReactNode> = {

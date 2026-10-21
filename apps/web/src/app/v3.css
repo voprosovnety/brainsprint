@@ -41,6 +41,7 @@ html:has(.v3-shell dialog[open]) { overflow: hidden; }
 .v3-actions > p { font-size: 12px; color: var(--v3-muted); }
 .v3-primary, .v3-secondary { display: flex; align-items: center; justify-content: center; gap: 18px; min-height: 56px; width: 100%; border: 1px solid transparent; border-radius: 12px; padding: 14px 22px; font-family: var(--body); font-size: 16px; font-weight: 600; line-height: 1.35; transition: background .15s, transform .15s; }
 .v3-primary { background: var(--v3-violet); color: #fff; }
+.v3-shell .v3-primary:disabled { background: #e1e3ec; color: #777b90; opacity: 1; transition: none; cursor: default; }
 .v3-primary:hover:not(:disabled) { background: #414cb7; }
 .v3-primary > span { font-size: 23px; line-height: 1; }
 .v3-secondary { background: white; color: var(--v3-violet); border-color: var(--v3-line); }
@@ -115,7 +116,7 @@ html:has(.v3-shell dialog[open]) { overflow: hidden; }
 .v3-email label { font-size: 13px; font-weight: 600; margin-bottom: 9px; }
 .v3-email label > span { font-weight: 400; color: var(--v3-muted); }
 .v3-email input { border: 1.5px solid #daddE8; border-radius: 12px; background: white; padding: 17px; font: 16px var(--body); color: var(--v3-ink); width: 100%; }
-.v3-email form > .v3-text-button { align-self: flex-start; margin: 7px 0 8px; }
+.v3-email .v3-question-body > .v3-text-button { align-self: flex-start; margin: 7px 0 8px; }
 .v3-email-note { color: var(--v3-muted); font-size: 12px; margin-bottom: 20px; }
 .v3-error { width: min(100% - 40px, 520px); margin: 15px auto 25px; padding: 20px; border: 1px solid #dc9fba; border-radius: 13px; background: #fff4f8; color: #793c57; font-size: 14px; }
 .v3-main > .v3-error { width: 100%; }
@@ -145,5 +146,70 @@ html:has(.v3-shell dialog[open]) { overflow: hidden; }
 @media (max-width: 360px) { .v3-header, .v3-main, .v3-privacy, .v3-footer { width: calc(100% - 28px); } .v3-main { padding-top: 27px; } .v3-image-options img { height: 75px; } .v3-object-options { gap: 8px; } .v3-option { padding: 15px; } }
 @media (prefers-reduced-motion: reduce) { .v3-shell *, .v3-shell *::before, .v3-shell *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 
-/* The next question is already readable while the previous answer saves. */
-.v3-inflight-preview button:disabled { opacity: 1; cursor: progress; }
+/* Quiz navigation occupies one viewport; only dialogs can scroll. */
+html:has(.v3-quiz-shell) { overflow: hidden; }
+.v3-quiz-shell { height: 100svh; height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.v3-quiz-shell .v3-header { flex: none; padding-top: max(12px, env(safe-area-inset-top)); }
+.v3-quiz-shell .v3-header-row { padding-bottom: 12px; }
+.v3-header-tools { display: flex; align-items: center; gap: 10px; }
+.v3-info-button { width: 44px; height: 44px; padding: 0; background: transparent; color: var(--v3-muted); font-size: 23px; border-radius: 50%; }
+.v3-quiz-shell .v3-main { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; padding-top: clamp(12px, 2.5dvh, 28px); padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.v3-quiz-shell .v3-question { flex: 1; min-height: 0; padding: 0; }
+.v3-question-body { display: flex; flex-direction: column; flex: 1; min-height: 0; container-type: size; }
+.v3-question-body > * { flex-shrink: 0; }
+.v3-question-body .v3-question-intro { margin-bottom: clamp(10px, 3cqh, 24px); }
+.v3-question-body h1 { font-size: clamp(24px, 6.5cqh, 40px); }
+.v3-question-body .v3-eyebrow { margin-bottom: clamp(6px, 2cqh, 14px); }
+.v3-question-body .v3-question-intro > p:not(.v3-eyebrow) { margin-top: clamp(7px, 2cqh, 15px); font-size: 14px; }
+.v3-quiz-shell .v3-actions { flex: none; gap: 4px; padding-top: 12px; }
+.v3-question-body .v3-options { gap: clamp(6px, 1.5cqh, 10px); }
+.v3-question-body .v3-option { min-height: clamp(44px, 10cqh, 59px); padding: clamp(9px, 2.5cqh, 16px) 16px; }
+.v3-demographic-question .v3-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.v3-demographic-question .v3-option { font-size: 14px; gap: 8px; }
+.v3-question-body .v3-selection-hint { margin-top: 10px; font-size: 10px; }
+.v3-question-body .v3-puzzle { flex: 1; min-height: 0; max-height: 265px; margin-bottom: 10px; }
+.v3-question-body .v3-puzzle > img { height: 100%; max-height: none; }
+.v3-question-body .v3-image-options { flex: 1.4; min-height: 0; max-height: 260px; grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.v3-question-body .v3-image-options .v3-option { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; padding: 6px 10px; gap: 2px; }
+.v3-question-body .v3-image-options img { min-height: 0; height: 100%; }
+.v3-question-body .v3-object-options .v3-option { padding: 8px 4px; min-height: 0; gap: 4px; }
+.v3-question-body .v3-object-options svg { width: clamp(36px, 12cqh, 59px); height: clamp(36px, 12cqh, 59px); }
+.v3-question-body .v3-word-card { flex: 1; min-height: 0; max-height: 300px; margin: 8px auto 18px; padding: 16px; }
+.v3-question-body .v3-break-art { flex: 0 0 min(230px, 40cqh); width: min(230px, 40cqh); margin: 8px auto 20px; }
+.v3-question-body .v3-break-art i { width: 43.5%; height: 43.5%; left: 11%; top: 11%; border-radius: 30%; }
+.v3-question-body .v3-break-art i:nth-child(2) { left: 46%; top: 39%; }
+.v3-question-body .v3-break-art i:nth-child(3) { width: 19%; height: 19%; left: 13%; top: 67%; border-radius: 50%; }
+.v3-question-body .v3-break-art > span { left: 39%; top: 31%; font-size: clamp(30px, 14cqh, 78px); }
+.v3-question-body .v3-community-art { flex: 1; min-height: 0; height: 0; max-height: 250px; margin: 8px auto 20px; }
+.v3-question-body .v3-confirmation-art { padding: clamp(16px, 5cqh, 38px) 20px; gap: 12px; margin: 8px 0 20px; }
+.v3-question-body .v3-digits { padding: clamp(20px, 12cqh, 65px) 0 24px .16em; }
+.v3-question-body .v3-preparation-orbit { flex: 0 1 180px; min-height: 0; width: min(180px, 30cqh); margin: 8px auto 20px; }
+.v3-question-body .v3-stages { font-size: 13px; gap: clamp(5px, 2cqh, 12px); }
+.v3-quiz-shell .v3-email form { min-height: 0; }
+.v3-question-body .v3-envelope { margin: clamp(8px, 3cqh, 29px) auto clamp(12px, 5cqh, 38px); }
+.v3-quiz-shell .v3-main > .v3-error { position: absolute; z-index: 2; bottom: 80px; margin: 0; max-height: calc(100% - 80px); overflow-y: auto; box-shadow: 0 8px 30px #25253922; }
+.v3-quiz-shell .v3-loading { min-height: 0; flex: 1; }
+.v3-information .v3-privacy, .v3-information .v3-footer { width: 100%; }
+.v3-information .privacy-note summary { margin: auto; }
+/* Answer options remain readable while the preceding write is in flight. */
+.v3-inflight-preview .v3-option:disabled { opacity: 1; cursor: progress; }
+
+@container (max-height: 400px) {
+  .v3-question-body h1 { font-size: 22px; }
+  .v3-question-body .v3-options:not(.v3-image-options):not(.v3-object-options):not(.v3-scale-options) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .v3-question-body .v3-scale-options { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .v3-question-body .v3-scale-options .v3-option { flex-direction: column; padding: 8px 3px; gap: 8px; font-size: 11px; text-align: center; }
+  .v3-question-body .v3-scale-options .v3-option > span:first-child { flex-direction: column; gap: 6px; }
+  .v3-question-body .v3-break-art, .v3-question-body .v3-preparation-orbit, .v3-question-body .v3-envelope { display: none; }
+}
+
+@media (max-height: 560px) and (min-width: 600px) {
+  .v3-quiz-shell .v3-main { width: min(100% - 40px, 960px); }
+  .v3-question-body:has(.v3-options) { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 24px; }
+  .v3-question-body:has(.v3-options) > .v3-question-intro { grid-column: 1; grid-row: 1 / 3; align-self: center; }
+  .v3-question-body:has(.v3-puzzle) > .v3-question-intro { grid-row: 1; }
+  .v3-question-body > .v3-puzzle { grid-column: 1; grid-row: 2; height: 100%; margin: 0; }
+  .v3-question-body > .v3-options { grid-column: 2; grid-row: 1 / 3; align-self: stretch; max-height: none; }
+  .v3-question-body > .v3-selection-hint { grid-column: 1 / -1; grid-row: 3; }
+  .v3-question-body .v3-option { min-height: 0; padding: 6px 12px; font-size: 13px; }
+}
