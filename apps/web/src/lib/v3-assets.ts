@@ -32,6 +32,8 @@ function load(source: string, priority: Priority): Promise<void> {
       settled = true;
       clearTimeout(timeout);
       image.onload = null; image.onerror = null;
+      // Release a stalled request so a retry cannot join the same broken fetch.
+      image.removeAttribute("src");
       images.delete(source);
       reject(new Error("The next illustration could not load. Check your connection and try again."));
     };

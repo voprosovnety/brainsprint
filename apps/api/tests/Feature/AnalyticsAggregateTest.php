@@ -122,6 +122,19 @@ class AnalyticsAggregateTest extends TestCase
         $this->assertSame([], $summary['steps']);
     }
 
+    public function test_observation_age_uses_earliest_view_regardless_of_row_order(): void
+    {
+        $run = $this->fixtureRun('multiple-views', '2026-10-01 01:00Z');
+        // Different view names for one screen can be returned in either database order.
+        $this->event($run, 'paywall_viewed_v3', '2026-10-03 01:00Z', 'report-offer');
+        $this->event($run, 'step_viewed', '2026-10-01 02:00Z', 'report-offer');
+        $steps = collect($this->summary()['steps'])->keyBy('step_id');
+
+        $this->assertSame(1, $steps['report-offer']['viewed']);
+        $this->assertSame(1, $steps['report-offer']['not_completed_after_observation']);
+        $this->assertSame(0, $steps['report-offer']['pending_observation']);
+    }
+
     public function test_invalid_or_unbounded_cohort_is_rejected(): void
     {
         $this->expectException(\InvalidArgumentException::class);

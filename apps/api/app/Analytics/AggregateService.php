@@ -51,7 +51,7 @@ class AggregateService
         $steps = [];
         foreach ($stepGroups as $group) {
             $first = $group->first();
-            $views = $group->whereIn('name', ['step_viewed', 'paywall_viewed_v3', 'report_viewed_v3'])->unique('run_id');
+            $views = $group->whereIn('name', ['step_viewed', 'paywall_viewed_v3', 'report_viewed_v3'])->sortBy('created_at')->unique('run_id');
             $completed = $group->where('name', 'step_completed')->pluck('run_id')->unique()->all();
             $viewIds = $views->pluck('run_id')->all();
             $remaining = $views->reject(fn ($e) => in_array($e->run_id, $completed, true));

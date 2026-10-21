@@ -83,18 +83,26 @@ function Reveal({ screen, busy, saving, onSubmit }: Props) {
   useEffect(() => { if (remaining === 0 && !busy && !submitted.current) { submitted.current = true; onSubmit({ acknowledged: true }); } }, [remaining, busy, onSubmit]);
   return <section className="v3-question v3-reveal"><div className="v3-question-intro"><p className="v3-eyebrow">A moment for your memory</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-digits" aria-label={remaining ? screen.digits?.split("").join(" ") : "The digits are now hidden"}>{remaining ? screen.digits : "•".repeat(screen.digits?.length || 5)}</div><p className="v3-soft-note" role="status">{remaining ? `${remaining} seconds to remember` : "Your next question is ready"}</p><div className="v3-reveal-track" aria-hidden="true"><span style={{ width: `${remaining / (screen.reveal_seconds || 5) * 100}%` }} /></div><div className="v3-actions"><button className="v3-primary" disabled={busy || remaining > 0} onClick={() => onSubmit({ acknowledged: true })}>{saving ? "Saving…" : remaining ? "Keep the digits in mind" : "Continue"}</button></div></section>;
 }
-function Processing({ screen, busy, saving, onSubmit }: Props) {
-  const [seconds, setSeconds] = useState(0);
-  const [preferences, setPreferences] = useState<Partial<Record<"focus" | "practice", "yes" | "no">>>({});
+function Processing({ screen, busy, saving, onSubmit, draft }: Props) {
+  const [seconds, setSeconds] = useState(draft ? screen.duration_seconds || 5 : 0);
+  const [preferences, setPreferences] = useState<Partial<Record<"focus" | "practice", "yes" | "no">>>(draft && "focus" in draft ? { focus: draft.focus, practice: draft.practice } : {});
   const [info, setInfo] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const autoSubmitted = useRef(false);
+  const informationOpen = useRef(false);
+  const submissionStarted = useRef(false);
   const reduceMotion = useRef(false);
   const prompts = screen.prompts || [];
   const duration = screen.duration_seconds || 5;
   const nextPrompt = !info && prompts.find((p, i) => !preferences[p.id] && seconds >= duration * (i + 1) / (prompts.length + 1));
   const complete = seconds >= duration && prompts.every(p => !!preferences[p.id]);
   const modal = !!nextPrompt || info;
+  useEffect(() => { if (!busy) submissionStarted.current = false; }, [busy]);
+  function openInformation() {
+    if (busy || submissionStarted.current) return;
+    informationOpen.current = true; setInfo(true);
+  }
+  function closeInformation() { informationOpen.current = false; setInfo(false); }
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => { reduceMotion.current = media.matches; };
@@ -103,29 +111,32 @@ function Processing({ screen, busy, saving, onSubmit }: Props) {
   }, []);
   useEffect(() => {
     if (modal || complete) return;
-    const timer = window.setInterval(() => { if (document.visibilityState === "visible") setSeconds(value => Math.min(duration, value + (reduceMotion.current ? duration : 0.25))); }, 250);
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible" && !informationOpen.current) setSeconds(value => Math.min(duration, value + (reduceMotion.current ? duration : 0.25))); }, 250);
     return () => clearInterval(timer);
   }, [modal, complete, duration]);
   useEffect(() => {
     const element = dialog.current;
     if (modal) {
       if (!element?.open) element?.showModal();
+      if (element) element.scrollTop = 0;
       const title = element?.querySelector("h2");
       if (title) { title.tabIndex = -1; title.focus({ preventScroll: true }); }
     } else if (element?.open) element.close();
   }, [modal, nextPrompt && nextPrompt.id, info]);
-  useEffect(() => { if (complete && !modal && !prompts.length && !busy && !autoSubmitted.current) { autoSubmitted.current = true; onSubmit({ acknowledged: true }); } }, [complete, modal, busy, onSubmit, prompts.length]);
+  useEffect(() => { if (complete && !modal && !informationOpen.current && !prompts.length && !busy && !autoSubmitted.current) { autoSubmitted.current = true; submissionStarted.current = true; onSubmit({ acknowledged: true }); } }, [complete, modal, busy, onSubmit, prompts.length]);
   const stage = Math.min((screen.stages?.length || 1) - 1, Math.floor(seconds / duration * (screen.stages?.length || 1)));
   function finish() {
+    if (busy || informationOpen.current || submissionStarted.current) return;
+    submissionStarted.current = true;
     if (preferences.focus && preferences.practice) onSubmit({ focus: preferences.focus, practice: preferences.practice });
     else if (!prompts.length) onSubmit({ acknowledged: true });
   }
-  return <section className="v3-question v3-processing"><div className="v3-question-intro"><p className="v3-eyebrow">Your report, coming together</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-preparation-orbit" aria-hidden="true"><i /><i /><i /><strong>✳</strong></div><div className="v3-processing-progress" role="progressbar" aria-label="Preparing your report" aria-valuenow={Math.round(seconds / duration * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${seconds / duration * 100}%` }} /></div><ol className="v3-stages">{screen.stages?.map((label, i) => <li key={label} className={i <= stage ? "active" : ""}><span aria-hidden="true">{i < stage || complete ? "✓" : i === stage ? "◌" : "○"}</span>{label}</li>)}</ol><p className="v3-sr-only" role="status">{complete ? "Your report preparation is complete" : screen.stages?.[stage]}</p><button className="v3-text-button v3-how" onClick={() => setInfo(true)}>ⓘ About your report</button><div className="v3-actions"><button className="v3-primary" disabled={busy || !complete} onClick={finish}>{saving ? "Saving…" : complete ? "Continue" : "Preparing your report…"}<span aria-hidden="true">→</span></button></div>
-    <dialog ref={dialog} className="v3-dialog" aria-labelledby="v3-dialog-title" onCancel={event => { if (nextPrompt) event.preventDefault(); else setInfo(false); }} onClose={() => setInfo(false)}>{nextPrompt ? <><span className="v3-dialog-symbol" aria-hidden="true">✧</span><p className="v3-eyebrow">One quick question</p><h2 id="v3-dialog-title">{nextPrompt.title}</h2><p>This helps save your preferences alongside your report.</p><div className="v3-modal-options"><button className="v3-primary" onClick={() => setPreferences(value => ({ ...value, [nextPrompt.id]: "yes" }))}>Yes, I would</button><button className="v3-secondary" onClick={() => setPreferences(value => ({ ...value, [nextPrompt.id]: "no" }))}>No, thank you</button></div></> : <><h2 id="v3-dialog-title">A fresh perspective, for curiosity.</h2><p>Your report is an illustrative sample. It is independent of answer correctness and does not measure intelligence or cognitive ability. Your two preferences are saved with this visit.</p><button className="v3-primary" onClick={() => setInfo(false)}>Got it</button></>}</dialog>
+  return <section className="v3-question v3-processing"><div className="v3-question-intro"><p className="v3-eyebrow">Your report, coming together</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-preparation-orbit" aria-hidden="true"><i /><i /><i /><strong>✳</strong></div><div className="v3-processing-progress" role="progressbar" aria-label="Preparing your report" aria-valuenow={Math.round(seconds / duration * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${seconds / duration * 100}%` }} /></div><ol className="v3-stages">{screen.stages?.map((label, i) => <li key={label} className={i <= stage ? "active" : ""}><span aria-hidden="true">{i < stage || complete ? "✓" : i === stage ? "◌" : "○"}</span>{label}</li>)}</ol><p className="v3-sr-only" role="status">{complete ? "Your report preparation is complete" : screen.stages?.[stage]}</p><button className="v3-text-button v3-how" disabled={busy} onClick={openInformation}>ⓘ About your report</button><div className="v3-actions"><button className="v3-primary" disabled={busy || !complete} onClick={finish}>{saving ? "Saving…" : complete ? "Continue" : "Preparing your report…"}<span aria-hidden="true">→</span></button></div>
+    <dialog ref={dialog} className="v3-dialog" aria-labelledby="v3-dialog-title" onCancel={event => { if (nextPrompt) event.preventDefault(); else closeInformation(); }} onClose={closeInformation}>{nextPrompt ? <><span className="v3-dialog-symbol" aria-hidden="true">✧</span><p className="v3-eyebrow">One quick question</p><h2 id="v3-dialog-title">{nextPrompt.title}</h2><p>This helps save your preferences alongside your report.</p><div className="v3-modal-options"><button className="v3-primary" onClick={() => setPreferences(value => ({ ...value, [nextPrompt.id]: "yes" }))}>Yes, I would</button><button className="v3-secondary" onClick={() => setPreferences(value => ({ ...value, [nextPrompt.id]: "no" }))}>No, thank you</button></div></> : <><h2 id="v3-dialog-title">A fresh perspective, for curiosity.</h2><p>Your report is an illustrative sample. It is independent of answer correctness and does not measure intelligence or cognitive ability. Your two preferences are saved with this visit.</p><button className="v3-primary" onClick={closeInformation}>Got it</button></>}</dialog>
   </section>;
 }
-function Email({ screen, busy, saving, onSubmit }: Props) {
-  const [email, setEmail] = useState("");
+function Email({ screen, busy, saving, onSubmit, draft }: Props) {
+  const [email, setEmail] = useState(draft && "email" in draft ? draft.email || "" : "");
   return <section className="v3-question v3-email"><div className="v3-question-intro"><p className="v3-eyebrow">A place for your perspective</p><h1>{screen.title}</h1><p>{screen.description}</p></div><div className="v3-envelope" aria-hidden="true"><span>✳</span></div><form onSubmit={e => { e.preventDefault(); onSubmit({ email: email.trim() || null }); }}><label htmlFor="report-email">Email address <span>(optional)</span></label><input id="report-email" type="email" inputMode="email" autoComplete="email" maxLength={254} placeholder={screen.sample_email || "reader@example.com"} value={email} disabled={busy} onChange={e => setEmail(e.target.value)} /><button type="button" className="v3-text-button" disabled={busy} onClick={() => setEmail(screen.sample_email || "reader@example.com")}>Use the sample address</button><p className="v3-email-note">Your report opens in this browser. This address stays with your saved visit; no email is sent.</p><div className="v3-actions"><button className="v3-primary" type="submit" disabled={busy}>{saving ? "Saving…" : screen.cta || "Continue"}<span aria-hidden="true">→</span></button><button className="v3-text-button" type="button" disabled={busy} onClick={() => onSubmit({ email: null })}>Skip for now</button></div></form></section>;
 }
 function ObjectDrawing({ label }: { label: string }) {

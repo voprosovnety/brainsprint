@@ -102,7 +102,8 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   }
   async function save(answer: V3Answer, step = viewRef.current) {
     const current = runRef.current;
-    if (!current || writing.current || current.demo_completed || step !== current.current_step || viewRef.current !== step) return;
+    if (!current || writing.current || current.demo_completed || step !== current.current_step
+      || (viewRef.current !== step && pending?.step !== step)) return;
     const source = current.configuration.steps.find(screen => screen.id === step);
     // Only deterministic, noncommercial presentation can lead server confirmation.
     // The next answer stays locked until this write succeeds; private report/offer state is never projected.
@@ -152,10 +153,10 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   const commercial = !!screen && ["paywall", "upsell", "final"].includes(screen.type) && (!saved || screen.type === "final");
   const responses = config.steps.filter(s => s.enabled && ["single_choice", "scale"].includes(s.type));
   const confirmed = responses.filter(s => run?.completed_steps.includes(s.id)).length;
-  const completed = confirmed + (pending && view !== pending.step && !run?.completed_steps.includes(pending.step) && responses.some(s => s.id === pending.step) ? 1 : 0);
+  const completed = confirmed + (busy && pending && view !== pending.step && !run?.completed_steps.includes(pending.step) && responses.some(s => s.id === pending.step) ? 1 : 0);
   const progress = responses.length ? Math.round(completed / responses.length * 100) : 0;
   const locked = busy || !!pending || navigating || !!imageFailure || !run;
-  const previewing = !!pending && pending.step !== view;
+  const previewing = busy && !!pending && pending.step !== view;
   useEffect(() => {
     warmUpcomingAssets(config, view === "done" && run ? finalScreen(run)?.id || config.entry : view);
     warmFunnelAssets(config, run?.configuration_version || initial.configuration_version);

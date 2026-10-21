@@ -65,6 +65,7 @@ export function V3Commerce({ screen, run, busy, onSubmit }: Props) {
     if (!dialog) return;
     if (modal) {
       if (!dialog.open) dialog.showModal();
+      dialog.scrollTop = 0;
       dialog.querySelector<HTMLButtonElement>(".vc-dialog-close")?.focus({ preventScroll: true });
     } else if (dialog.open) dialog.close();
     let frame = 0;
