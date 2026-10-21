@@ -2,6 +2,14 @@
 
 Target scope: [ARCHITECTURE.md](ARCHITECTURE.md). Project/task statuses live exclusively here. The redesign is implemented and published under the subsequent explicit hosting request. The latest hosting outcome and remaining acceptance limits are recorded below.
 
+## UI follow-up — 2026-10-21
+
+Request: center the final “One quick question” prompts and match the reference’s immediate question/artwork presentation.
+
+Implemented locally: explicit fixed/inset/auto-margin centering for preparation and checkout dialogs; bounded/decode-aware static image warming, upcoming-screen priority, atomic artwork presentation and image retry; immediate deterministic question previews during the previous save, with the next input held until confirmation; exact rollback/retry on save errors; confirmed-only report/offer transitions; deferred actual-view telemetry until server eligibility. No API/schema changes or new dependencies.
+
+Diagnosis is source-based because the user’s verification budget prohibits executable reproduction. The supplied preview URL was attempted with the web reader but was inaccessible; no new reference/runtime comparison is claimed. Status: final static diff reviewed; publishing through the already-authorized manual release path. No local/browser tests or measurements ran.
+
 ## Hosting publication — 2026-10-21
 
 The user now explicitly authorizes publication of the new version and prioritizes it over legacy-run review. Manual `Release operations: release` will publish the committed v3 source through the existing backend-first release branches. The separate Funnel checks suite is not requested; the release commit skips that automatic suite. Hosting compilation and the existing revision/health readiness gate are necessary deployment steps. A bounded encrypted backup is uploaded before database publication; no visitor reset or retrospective migration is required.
@@ -62,7 +70,7 @@ R1–R8 were implemented under local-only authorization. The later hosting reque
 - A new visitor starts at word memory. Legacy promotional landing, onboarding, grid tutorial, card-arrangement games, pre-paywall three-indicator snapshot and payment boundary are absent from v3.
 - The complete inventory/order matches the architecture, including four interstitials at mapped positions and the commercial sequence. Word/digit recall corresponds to the earlier reveals.
 - The visual direction matches the reference's centered serif-heading/periwinkle treatment. Mobile CTAs never obscure options. Desktop keeps a deliberate narrow funnel. Keyboard, focus, zoom and reduced motion work throughout.
-- Answers save before advancement. Double taps/retries cannot skip screens or duplicate milestones. Refresh restores confirmed progress; unfinished timed/presentation states recover coherently. Browser history cannot access future steps or the locked report.
+- Confirmed progression stays server-authoritative. Ordinary next-screen previews cannot submit until their preceding answer is confirmed; double taps/retries cannot skip screens or duplicate milestones. Refresh restores confirmed progress; unfinished timed/presentation states recover coherently. Browser history cannot access future steps or the locked report.
 - The paywall is a complete first-class page. Every CTA reaches the same functional mock checkout. Countdown and prices stay consistent. The old boundary and unavailable-method placeholder are not acceptable substitutes.
 - Simulated unlock and both upsell outcomes persist once. Final screens expose usable sample content. No real financial, email or consumer-account operation occurs.
 - Historical configuration, answers, results, attribution and completion semantics are preserved. New state respects ownership/deletion/retention. Public analytics stay aggregate-only and administration stays protected.

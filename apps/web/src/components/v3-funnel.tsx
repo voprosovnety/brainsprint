@@ -6,6 +6,7 @@ import type { V3Answer, V3Bootstrap, V3Run, V3Screen } from "@/lib/v3";
 import { Privacy } from "./privacy";
 import { V3Quiz } from "./v3-quiz";
 import { V3Commerce } from "./v3-commerce";
+import { prepareScreenAssets, screenAssetsReady, warmFunnelAssets, warmUpcomingAssets } from "@/lib/v3-assets";
 
 function allowed(run: V3Run, id: string) {
   return id === run.current_step || run.completed_steps.includes(id);
@@ -27,6 +28,11 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   const [busy, setBusy] = useState(!initial.run);
   const [error, setError] = useState("");
   const [pending, setPending] = useState<{ step: string; answer: V3Answer } | null>(null);
+  const [navigating, setNavigating] = useState(false);
+  const [imageFailure, setImageFailure] = useState<{ step: string; message: string } | null>(null);
+  const navigation = useRef(0);
+  const observedViews = useRef(new Map<string, Parameters<typeof recordView>[0]>());
+  const deliveringView = useRef(false);
   const [now, setNow] = useState(() => Date.now());
   const [deleted, setDeleted] = useState(false);
   const initialized = useRef(false);
@@ -36,13 +42,45 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   const headingRegion = useRef<HTMLDivElement>(null);
   const errorRegion = useRef<HTMLDivElement>(null);
   function show(id: string, replace = false) {
-    viewRef.current = id; setView(id);
-    const url = new URL(window.location.href);
-    url.searchParams.set("screen", id);
-    if (replace) window.history.replaceState(null, "", url);
-    else window.history.pushState(null, "", url);
+    const token = ++navigation.current;
+    const current = runRef.current;
+    const configuration = current?.configuration || initial.configuration;
+    const target = id === "done" && current ? finalScreen(current) : configuration.steps.find(screen => screen.id === id);
+    viewRef.current = id;
+    setImageFailure(null);
+    const present = () => {
+      if (token !== navigation.current) return;
+      setView(id); setNavigating(false);
+      const url = new URL(window.location.href);
+      url.searchParams.set("screen", id);
+      if (replace) window.history.replaceState(null, "", url);
+      else window.history.pushState(null, "", url);
+    };
+    if (screenAssetsReady(target)) { present(); return; }
+    setNavigating(true);
+    // Present one complete question, never text first and illustrations later.
+    void prepareScreenAssets(target).then(present, (failure: Error) => {
+      if (token !== navigation.current) return;
+      setNavigating(false); setImageFailure({ step: id, message: failure.message });
+    });
   }
   function accept(value: V3Run) { runRef.current = value; setRun(value); }
+  async function flushViews() {
+    const current = runRef.current;
+    if (!current || writing.current || deliveringView.current) return;
+    const next = [...observedViews.current.entries()].find(([, event]) => event.run_id === current.id && !!event.step_id && allowed(current, event.step_id));
+    if (!next) return;
+    const [key, event] = next;
+    observedViews.current.delete(key); deliveringView.current = true;
+    try { await recordView(event); }
+    finally { deliveringView.current = false; void flushViews(); }
+  }
+  function observe(name: Parameters<typeof recordView>[0]["name"], id: string) {
+    const current = runRef.current;
+    if (!current) return;
+    observedViews.current.set(`${name}:${id}`, { name, run_id: current.id, step_id: id });
+    void flushViews();
+  }
   async function start() {
     if (writing.current) return;
     writing.current = true; setBusy(true); setError("");
@@ -64,14 +102,24 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   }
   async function save(answer: V3Answer, step = viewRef.current) {
     const current = runRef.current;
-    if (!current || writing.current || current.demo_completed || step !== current.current_step) return;
+    if (!current || writing.current || current.demo_completed || step !== current.current_step || viewRef.current !== step) return;
+    const source = current.configuration.steps.find(screen => screen.id === step);
+    // Only deterministic, noncommercial presentation can lead server confirmation.
+    // The next answer stays locked until this write succeeds; private report/offer state is never projected.
+    const target = current.configuration.steps.find(screen => screen.id === source?.next);
+    const preview = source && target && ["word_intro", "single_choice", "scale", "timed_reveal", "interstitial"].includes(source.type)
+      && !["paywall", "upsell", "final"].includes(target.type) ? target.id : null;
     writing.current = true; setBusy(true); setError(""); setPending({ step, answer });
+    if (preview) show(preview);
     try {
       const value = await api<V3Run>(`runs/${current.id}/steps/${encodeURIComponent(step)}/complete`, { answer });
       accept(value); setPending(null);
-      if (viewRef.current === step) show(value.current_step);
-    } catch (e) { setError((e as Error).message || "Your answer could not be saved. Retry when you are connected."); }
-    finally { writing.current = false; setBusy(false); }
+      if (!preview || value.current_step !== preview || viewRef.current === step) show(value.current_step);
+    } catch (e) {
+      setError((e as Error).message || "Your answer could not be saved. Retry when you are connected.");
+      // Return to the exact unsaved answer, including an identical retry after a lost response.
+      if (preview) show(step, true);
+    } finally { writing.current = false; setBusy(false); void flushViews(); }
   }
   useEffect(() => {
     if (initialized.current) return;
@@ -92,43 +140,54 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
     return () => { clearInterval(interval); window.removeEventListener("popstate", pop); };
   }, []);
   useEffect(() => {
+    if (navigating) return;
     const heading = headingRegion.current?.querySelector<HTMLElement>("h1");
     heading?.setAttribute("tabindex", "-1"); heading?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
-  }, [view]);
-  useEffect(() => { if (error) errorRegion.current?.focus(); }, [error]);
+  }, [view, navigating]);
+  useEffect(() => { if (error || imageFailure) errorRegion.current?.focus(); }, [error, imageFailure]);
   const config = run?.configuration || initial.configuration;
   const screen = view === "done" && run ? finalScreen(run) : config.steps.find(s => s.id === view);
-  const saved = !!run && run.completed_steps.includes(view) && view !== "done";
+  const saved = !!run && run.completed_steps.includes(view) && view !== "done" && !navigating && !imageFailure;
   const commercial = !!screen && ["paywall", "upsell", "final"].includes(screen.type) && (!saved || screen.type === "final");
   const responses = config.steps.filter(s => s.enabled && ["single_choice", "scale"].includes(s.type));
-  const completed = responses.filter(s => run?.completed_steps.includes(s.id)).length;
+  const confirmed = responses.filter(s => run?.completed_steps.includes(s.id)).length;
+  const completed = confirmed + (pending && view !== pending.step && !run?.completed_steps.includes(pending.step) && responses.some(s => s.id === pending.step) ? 1 : 0);
   const progress = responses.length ? Math.round(completed / responses.length * 100) : 0;
-  const locked = busy || !!pending || !run;
+  const locked = busy || !!pending || navigating || !!imageFailure || !run;
+  const previewing = !!pending && pending.step !== view;
   useEffect(() => {
-    if (!run || !screen) return;
+    warmUpcomingAssets(config, view === "done" && run ? finalScreen(run)?.id || config.entry : view);
+    warmFunnelAssets(config, run?.configuration_version || initial.configuration_version);
+    // Static artwork is safe to warm; fetching it does not claim screen exposure.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, run?.configuration_version]);
+  useEffect(() => {
+    if (!run || !screen || navigating || !screenAssetsReady(screen)) return;
     let first = 0, second = 0;
     function expose() {
       if (document.visibilityState !== "visible") return;
       first = requestAnimationFrame(() => { second = requestAnimationFrame(() => {
         if (document.visibilityState !== "visible") return;
-        void recordView({ name: "step_viewed", run_id: run!.id, step_id: screen!.id });
-        if (screen!.type === "paywall" && !saved) void recordView({ name: "paywall_viewed_v3", run_id: run!.id, step_id: screen!.id });
-        if (screen!.type === "final" && run!.commerce.unlocked && run!.result) void recordView({ name: "report_viewed_v3", run_id: run!.id, step_id: screen!.id });
+        observe("step_viewed", screen!.id);
+        if (screen!.type === "paywall" && !saved) observe("paywall_viewed_v3", screen!.id);
+        if (screen!.type === "final" && run!.commerce.unlocked && run!.result) observe("report_viewed_v3", screen!.id);
       }); });
     }
     expose(); document.addEventListener("visibilitychange", expose);
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); document.removeEventListener("visibilitychange", expose); };
-    // Exposures track a painted view, not timer ticks or in-place saves.
+    // Capture painted previews now, but deliver only once the server permits the screen.
+    // Progress writes take priority over the small, metadata-only exposure outbox.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, run?.id]);
+  }, [view, run?.id, navigating]);
   return <div className="v3-shell">
     {!commercial && <header className="v3-header"><div className="v3-header-row"><a className="v3-brand" href="/" onClick={e => e.preventDefault()} aria-label="BrainSprint"><span className="v3-brand-icon" aria-hidden="true">✳</span>BrainSprint</a><span className="v3-timer" aria-label={`Elapsed time ${elapsed(run?.started_at, now)}`}><span aria-hidden="true">◷</span> {elapsed(run?.started_at, now)}</span></div><div className="v3-progress" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={responses.length} aria-valuenow={completed}><span style={{ width: `${progress}%` }} /></div></header>}
-    <main ref={headingRegion} className={commercial ? "v3-commerce-main" : "v3-main"}>
+    <main ref={headingRegion} className={`${commercial ? "v3-commerce-main" : "v3-main"}${previewing || navigating || imageFailure ? " v3-inflight-preview" : ""}`}>
       {deleted && <p className="v3-notice" role="status">Your saved data was deleted. This is a new anonymous visit.</p>}
-      {screen ? saved && screen.type !== "final" ? <SavedScreen screen={screen} run={run!} onContinue={() => show(run!.current_step)} /> : commercial && run ? <V3Commerce key={screen.id} screen={screen} run={run} busy={locked} onSubmit={answer => { void save(answer); }} /> : <V3Quiz key={screen.id} screen={screen} busy={locked} saving={busy} onSubmit={answer => { void save(answer); }} progress={progress} /> : <section className="v3-loading"><h1>Your saved progress is here.</h1><p>Restore your current screen to continue.</p><button className="v3-primary" disabled={busy} onClick={restore}>Restore progress</button></section>}
+      {screen && !screenAssetsReady(screen) ? <section className="v3-question v3-saved" aria-busy="true"><h1>Opening your question…</h1><p role="status">Preparing the illustration.</p></section> : screen ? saved && screen.type !== "final" ? <SavedScreen screen={screen} run={run!} onContinue={() => show(run!.current_step)} /> : commercial && run ? <V3Commerce key={screen.id} screen={screen} run={run} busy={locked} onSubmit={answer => { void save(answer, screen.id); }} /> : <V3Quiz key={screen.id} screen={screen} busy={locked} saving={busy && !previewing} draft={pending?.step === screen.id ? pending.answer : undefined} onSubmit={answer => { void save(answer, screen.id); }} progress={progress} /> : <section className="v3-loading"><h1>Your saved progress is here.</h1><p>Restore your current screen to continue.</p><button className="v3-primary" disabled={busy} onClick={restore}>Restore progress</button></section>}
+      {imageFailure && <div className="v3-error" role="alert" tabIndex={-1} ref={errorRegion}><p>{imageFailure.message}</p><div><button className="v3-primary" onClick={() => show(imageFailure.step, true)}>Retry illustration</button><button className="v3-text-button" disabled={busy} onClick={restore}>Restore saved progress</button></div></div>}
       {error && <div className="v3-error" role="alert" tabIndex={-1} ref={errorRegion}><p>{error}</p>{pending && <p>Your selected answer is kept for an identical retry.</p>}<div><button className="v3-primary" disabled={busy} onClick={() => pending ? void save(pending.answer, pending.step) : run ? void restore() : void start()}>{busy ? "Saving…" : pending ? "Retry saving" : "Try again"}</button>{run && <button className="v3-text-button" disabled={busy} onClick={restore}>Restore saved progress</button>}</div></div>}
-      {run && !commercial && !pending && <nav className="v3-history" aria-label="Saved progress">{saved ? <button className="v3-text-button" disabled={busy} onClick={() => show(run.current_step)}>Return to current screen</button> : <span>{completed} of {responses.length} responses saved</span>}</nav>}
+      {run && !commercial && <nav className="v3-history" aria-label="Saved progress">{saved ? <button className="v3-text-button" disabled={busy} onClick={() => show(run.current_step)}>Return to current screen</button> : <span>{confirmed} of {responses.length} responses saved</span>}</nav>}
     </main>
     {!commercial && <><div className="v3-privacy"><Privacy locked={locked} /></div><footer className="v3-footer"><span>BrainSprint © 2026</span><a href="/demo-analytics">Sample analytics ↗</a></footer></>}
   </div>;

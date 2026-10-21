@@ -8,4 +8,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-V3 dispatches by the owned run’s pinned schema before latest publication. Keep legacy presentation isolated, direct v3 entry, local original SVGs and server-confirmed navigation. Full report visibility follows the API, not CSS. Checkout placeholders must remain inert and collect no financial data. Follow the explicit user budget: no executable or browser checks unless requested.
+V3 dispatches by the owned run’s pinned schema before latest publication. Keep legacy presentation isolated, direct v3 entry, local original SVGs and server-confirmed progression. Ordinary successor screens may preview during the previous write, but cannot submit before confirmation; errors return to the exact failed answer. Preload and decode images before presenting a complete screen. Center native dialogs explicitly. Full report visibility follows the API, not CSS. Checkout placeholders must remain inert and collect no financial data. Follow the explicit user budget: no executable or browser checks unless requested.

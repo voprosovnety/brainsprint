@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import type { V3Answer, V3Screen } from "@/lib/v3";
 
-type Props = { screen: V3Screen; busy: boolean; saving: boolean; progress: number; onSubmit: (answer: V3Answer) => void };
+type Props = { screen: V3Screen; busy: boolean; saving: boolean; progress: number; onSubmit: (answer: V3Answer) => void; draft?: V3Answer };
 // Text equivalents describe the original diagrams, without judging the visitor's choice.
 const diagrams: Record<string, { prompt: string; options: string[] }> = {
   rotation: { prompt: "An L shape turns a quarter turn clockwise each time: upright, right, upside down, then a missing fourth shape.", options: ["L turned left", "Upright L", "L turned right", "Upside-down L"] },
@@ -39,14 +39,14 @@ export function V3Quiz(props: Props) {
   if (screen.type === "email") return <Email {...props} />;
   return <section className={`v3-question v3-${screen.type}`}>
     <div className="v3-question-intro"><p className="v3-eyebrow">{screen.type === "word_intro" ? "A little exercise in remembering" : screen.type === "confirmation" ? "Your answers, all together" : "A moment of perspective"}</p><h1>{screen.title}</h1><p>{screen.description}</p></div>
-    {screen.type === "word_intro" ? <div className="v3-word-card"><span aria-hidden="true" className="v3-word-spark">✳</span><strong>{screen.word}</strong><span>Keep it in mind for later</span></div> : screen.art ? <img className="v3-community-art" src={screen.art} alt="People connected by their curiosity, an original illustration" /> : screen.type === "confirmation" ? <div className="v3-confirmation-art"><span aria-hidden="true">✓</span><strong>41 responses saved</strong><p>Words, numbers, shapes — and your perspective.</p></div> : <div className="v3-break-art" aria-hidden="true"><i /><i /><i /><span>✳</span></div>}
-    {screen.id === "emerging-profile" && <div className="v3-interstitial-progress"><span style={{ width: `${props.progress}%` }} /><p>{props.progress}% of your quiz responses are saved</p></div>}
-    {screen.id === "nearly-there" && <p className="v3-soft-note">{props.progress}% of your responses saved</p>}
+    {screen.type === "word_intro" ? <div className="v3-word-card"><span aria-hidden="true" className="v3-word-spark">✳</span><strong>{screen.word}</strong><span>Keep it in mind for later</span></div> : screen.art ? <img className="v3-community-art" src={screen.art} decoding="sync" loading="eager" alt="People connected by their curiosity, an original illustration" /> : screen.type === "confirmation" ? <div className="v3-confirmation-art"><span aria-hidden="true">✓</span><strong>41 responses ready</strong><p>Words, numbers, shapes — and your perspective.</p></div> : <div className="v3-break-art" aria-hidden="true"><i /><i /><i /><span>✳</span></div>}
+    {screen.id === "emerging-profile" && <div className="v3-interstitial-progress"><span style={{ width: `${props.progress}%` }} /><p>{props.progress}% of your quiz responses are answered</p></div>}
+    {screen.id === "nearly-there" && <p className="v3-soft-note">{props.progress}% of your responses answered</p>}
     <div className="v3-actions"><button className="v3-primary" disabled={props.busy} onClick={() => props.onSubmit({ acknowledged: true })}>{props.saving ? "Saving…" : screen.cta || "Continue"}<span aria-hidden="true">→</span></button>{screen.type === "word_intro" && <p>One task at a time. Go at your own pace.</p>}</div>
   </section>;
 }
-function Choices({ screen, busy, saving, onSubmit }: Props) {
-  const [selected, setSelected] = useState("");
+function Choices({ screen, busy, saving, onSubmit, draft }: Props) {
+  const [selected, setSelected] = useState(draft && "choice" in draft ? draft.choice : "");
   const group = useRef<HTMLDivElement>(null);
   const options = screen.options || [];
   const image = screen.presentation === "image";
@@ -61,10 +61,10 @@ function Choices({ screen, busy, saving, onSubmit }: Props) {
   }
   return <section className={`v3-question ${image ? "v3-visual-question" : ""}`} aria-busy={saving}>
     <div className="v3-question-intro"><p className="v3-eyebrow">{screen.role === "demographic" ? "A little about you" : screen.type === "scale" ? "Your perspective" : image ? "Look a little closer" : "Follow your curiosity"}</p><h1 id="v3-question-title">{screen.title}</h1><p>{screen.description}</p></div>
-    {screen.asset && <div className="v3-puzzle"><img src={screen.asset} alt={description?.prompt || screen.asset_alt || "An illustrated landmark"} /></div>}
+    {screen.asset && <div className="v3-puzzle"><img src={screen.asset} decoding="sync" loading="eager" alt={description?.prompt || screen.asset_alt || "An illustrated landmark"} /></div>}
     <div ref={group} className={`v3-options ${image ? "v3-image-options" : objects ? "v3-object-options" : screen.type === "scale" ? "v3-scale-options" : ""}`} role="radiogroup" aria-labelledby="v3-question-title">
       {options.map((option, i) => <button key={option.id} type="button" role="radio" aria-checked={selected === option.id} disabled={busy} tabIndex={selected ? selected === option.id ? 0 : -1 : i === 0 ? 0 : -1} onKeyDown={e => keyboard(e, i)} className={`v3-option ${selected === option.id ? "is-selected" : ""}`} onClick={() => { setSelected(option.id); onSubmit({ choice: option.id }); }}>
-        {option.asset && <img src={option.asset} alt={description?.options[i] || `Option ${option.label}`} />}
+        {option.asset && <img src={option.asset} decoding="sync" loading="eager" alt={description?.options[i] || `Option ${option.label}`} />}
         {objects && <ObjectDrawing label={option.label} />}
         <span>{screen.type === "scale" && <span className="v3-scale-number" aria-hidden="true">{i + 1}</span>}{option.label}</span><span className="v3-option-indicator" aria-hidden="true">{selected === option.id ? "✓" : ""}</span>
       </button>)}

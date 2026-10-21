@@ -98,7 +98,7 @@
 .v3-stages .active { color: #565a75; }
 .v3-stages span { color: #858fdb; }
 .v3-how { margin: 16px auto 10px; }
-.v3-dialog { width: min(100% - 36px, 410px); border: 0; border-radius: 21px; padding: 29px; color: var(--v3-ink); font-family: var(--body); text-align: center; background: #fff; box-shadow: 0 20px 90px #25253933; max-height: calc(100svh - 36px); overflow-y: auto; }
+.v3-dialog { position: fixed; inset: 0; margin: auto; height: fit-content; width: min(100% - 36px, 410px); border: 0; border-radius: 21px; padding: 29px; color: var(--v3-ink); font-family: var(--body); text-align: center; background: #fff; box-shadow: 0 20px 90px #25253933; max-height: calc(100svh - 36px); max-height: calc(100dvh - 36px); overflow-y: auto; overscroll-behavior: contain; }
 .v3-dialog::backdrop { background: #24263f5c; backdrop-filter: blur(3px); }
 .v3-dialog h2 { font-family: var(--display); }
 .v3-dialog p:not(.v3-eyebrow) { font-size: 14px; line-height: 1.6; color: #727486; margin-top: 16px; }
@@ -143,3 +143,6 @@
 @media (min-width: 720px) { .v3-header { padding-top: 35px; } .v3-main { padding-top: 45px; } .v3-question { min-height: min(760px, calc(100svh - 190px)); } .v3-question-intro { margin-bottom: 30px; } .v3-word-card { margin-top: 30px; min-height: 245px; } }
 @media (max-width: 360px) { .v3-header, .v3-main, .v3-privacy, .v3-footer { width: calc(100% - 28px); } .v3-main { padding-top: 27px; } .v3-image-options img { height: 75px; } .v3-object-options { gap: 8px; } .v3-option { padding: 15px; } }
 @media (prefers-reduced-motion: reduce) { .v3-shell *, .v3-shell *::before, .v3-shell *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* The next question is already readable while the previous answer saves. */
+.v3-inflight-preview button:disabled { opacity: 1; cursor: progress; }
