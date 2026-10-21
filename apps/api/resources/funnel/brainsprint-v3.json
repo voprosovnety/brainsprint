@@ -1,12 +1,6 @@
 {
   "schema_version": 3,
   "entry": "remember-word",
-  "landing": {
-    "eyebrow": "BrainSprint",
-    "title": "Keep one word in mind.",
-    "description": "A journey through words, numbers and shapes.",
-    "cta": "Begin"
-  },
   "result": {
     "title": "Your thinking profile",
     "disclaimer": "Illustrative sample content, independent of answer correctness."

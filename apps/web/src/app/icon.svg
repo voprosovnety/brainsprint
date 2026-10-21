@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>BrainSprint</title>
+  <rect width="512" height="512" rx="116" fill="#4f5bd0"/>
+  <g fill="none" stroke="#f5f6f8" stroke-width="42" stroke-linecap="round">
+    <path d="M256 112v69m0 150v69M112 256h69m150 0h69M154 154l49 49m106 106 49 49M154 358l49-49"/>
+    <path d="m309 203 49-49" stroke="#bfc6ff"/>
+  </g>
+</svg>

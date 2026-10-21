@@ -3,179 +3,180 @@
 namespace Tests\Feature;
 
 use App\Funnel\Configuration;
-use Tests\Fixtures\LegacyFunnelSeeder as DatabaseSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Tests\Support\CompletesFunnel;
 use Tests\TestCase;
 
 class FunnelProgressionTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, CompletesFunnel;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
         $this->withSession(['visitor_id' => 'owner']);
+        // A complete journey with retries exceeds a minute's normal production budget.
+        config(['release.consumer_per_minute' => 2000, 'release.global_per_minute' => 4000]);
     }
 
     private function start(): array { return $this->postJson('/api/v1/runs')->assertOk()->json(); }
-    private function complete(array $run, string $step, array $answer) {
-        return $this->postJson('/api/v1/runs/'.$run['id'].'/steps/'.$step.'/complete', ['answer' => $answer]);
-    }
-    private function answer(array $screen): array {
-        return match ($screen['type']) {
-            'tutorial', 'visual_memory' => ['cells' => $screen['pattern']],
-            'pattern' => ['choice' => $screen['correct_choice']],
-            'logic' => ['order' => $screen['correct_order']],
-            default => ['acknowledged' => true],
-        };
-    }
 
-    public function test_full_funnel_is_transactional_and_result_and_terminal_retries_are_stable(): void
+    public function test_full_funnel_persists_private_report_unlock_and_stable_terminal_retries(): void
     {
         $run = $this->start();
+        $this->assertSame('remember-word', $run['current_step']);
         $this->postJson('/api/v1/runs')->assertJsonPath('id', $run['id']);
-        $result = null;
+        $report = null;
+        $teaser = null;
+        $deadline = null;
         while ($run['current_step'] !== 'done') {
-            $step = $run['current_step'];
-            $screen = Configuration::screen($run['configuration'], $step);
+            $screen = Configuration::screen($run['configuration'], $run['current_step']);
             $answer = $this->answer($screen);
-            $next = $this->complete($run, $step, $answer)->assertOk()->json();
-            $this->complete($run, $step, $answer)->assertOk()->assertExactJson($next);
+            $next = $this->complete($run, $screen['id'], $answer)->assertOk()->json();
+            $this->complete($run, $screen['id'], $answer)->assertOk()->assertExactJson($next);
             $this->getJson('/api/v1/runs/'.$run['id'])->assertOk()->assertExactJson($next)->assertHeader('Cache-Control', 'no-store, private');
             $this->getJson('/api/v1/bootstrap')->assertJsonPath('run', $next);
-            if ($next['result']) {
-                $result ??= $next['result'];
-                $this->assertSame($result, $next['result']);
+            if ($next['teaser']) {
+                $teaser ??= $next['teaser'];
+                $this->assertSame($teaser, $next['teaser']);
             }
-            if ($next['current_step'] === 'demo-result') {
+            if ($next['commerce']['deadline']) {
+                $deadline ??= $next['commerce']['deadline'];
+                $this->assertSame($deadline, $next['commerce']['deadline']);
+            }
+            if (! $next['commerce']['unlocked']) {
+                $this->assertNull($next['result']);
+            } else {
+                $report ??= $next['result'];
+                $this->assertSame($report, $next['result']);
+            }
+            if ($screen['type'] === 'confirmation') {
+                $this->assertNotNull($next['teaser']);
+                $this->assertNotNull(json_decode(DB::table('funnel_runs')->first()->result, true)['report']);
                 $this->assertNull(DB::table('funnel_runs')->first()->completed_at);
-                $this->assertDatabaseHas('events', ['name' => 'quiz_completed']);
-                $this->assertDatabaseMissing('events', ['name' => 'demo_completed']);
             }
             $run = $next;
         }
         $this->assertTrue($run['demo_completed']);
+        $this->assertCount(57, $run['completed_steps']);
+        $this->assertSame('accept', $run['commerce']['upsell']);
+        $this->assertSame('illustrative_sample', $report['kind']);
         $this->assertNotNull(DB::table('funnel_runs')->first()->completed_at);
-        $this->assertCount(10, $run['completed_steps']);
-        $this->assertNotContains('memory-guide', $run['completed_steps']);
-        $this->assertDatabaseCount('events', 13);
-        $this->assertSame(1, DB::table('events')->where('name', 'quiz_completed')->count());
-        $this->assertSame(1, DB::table('events')->where('name', 'demo_completed')->count());
-        $this->assertSame($result['disclaimer'], 'Illustrative demo values — not calculated from your answers.');
-        $this->assertSame(3, count($result['indicators']));
-        $this->assertDatabaseMissing('events', ['name' => 'paywall_reached']);
+        foreach (['funnel_started', 'quiz_confirmed_v3', 'processing_completed_v3', 'mock_unlocked_v3', 'upsell_decided_v3', 'funnel_completed_v3'] as $name) {
+            $this->assertSame(1, DB::table('events')->where('name', $name)->count());
+        }
+        $this->assertDatabaseMissing('events', ['name' => 'paywall_viewed_v3']);
         $this->postJson('/api/v1/runs')->assertExactJson($run);
     }
 
-    public function test_tutorial_branch_uses_canonical_saved_answer_and_rejoins(): void
+    public function test_guide_decline_uses_only_its_final_and_preserves_immutable_decision(): void
     {
-        $run = $this->start();
-        $this->complete($run, 'memory-one', ['cells' => []])->assertStatus(409);
-        $this->complete($run, 'welcome', ['acknowledged' => true])->assertOk();
-        $guide = $this->complete($run, 'memory-tutorial', ['cells' => []])->assertOk()->assertJsonPath('current_step', 'memory-guide')->json();
-        $this->complete($run, 'memory-tutorial', ['cells' => []])->assertExactJson($guide);
-        $this->complete($run, 'memory-tutorial', ['cells' => [0, 4, 8]])->assertStatus(409);
-        $this->complete($run, 'memory-one', ['cells' => []])->assertStatus(409);
-        $this->complete($run, 'memory-guide', ['acknowledged' => true])->assertOk()->assertJsonPath('current_step', 'memory-one');
-        $this->withSession(['visitor_id' => 'correct-owner']);
-        $run = $this->start();
-        $this->complete($run, 'welcome', ['acknowledged' => true])->assertOk();
-        $this->complete($run, 'memory-tutorial', ['cells' => [8, 0, 4]])->assertOk()->assertJsonPath('current_step', 'memory-one');
-        $this->complete($run, 'memory-guide', ['acknowledged' => true])->assertStatus(409);
+        $run = $this->advanceTo($this->start(), 'guide-offer');
+        $screen = Configuration::screen($run['configuration'], 'guide-offer');
+        $next = $this->complete($run, 'guide-offer', ['decision' => 'decline'])->assertOk()->assertJsonPath('current_step', $screen['decline_next'])->json();
+        $this->complete($run, 'guide-offer', ['decision' => 'decline'])->assertExactJson($next);
+        $this->complete($run, 'guide-offer', ['decision' => 'accept'])->assertStatus(409);
+        $this->complete($run, $screen['next'], ['acknowledged' => true])->assertStatus(409);
+        $this->complete($run, $screen['decline_next'], ['acknowledged' => true])->assertJsonPath('demo_completed', true);
     }
 
-    public function test_wrong_owner_skips_and_invalid_answers_are_rejected_without_writes(): void
+    public function test_ownership_future_screens_and_strict_answers_are_enforced_without_writes(): void
     {
         $run = $this->start();
-        $this->complete($run, 'finish', ['acknowledged' => true])->assertStatus(409);
-        foreach ([false, 1, 'true'] as $value) { $this->complete($run, 'welcome', ['acknowledged' => $value])->assertStatus(422); }
-        $this->complete($run, 'welcome', ['acknowledged' => true, 'next' => 'finish'])->assertStatus(422);
-        $this->postJson('/api/v1/runs/'.$run['id'].'/steps/welcome/complete', ['answer' => ['acknowledged' => true], 'next' => 'finish'])->assertStatus(422);
-        $this->complete($run, 'memory-tutorial', ['cells' => [9]])->assertStatus(422);
-        foreach ([[true], ['1'], [1.1], [-1], [0, 0]] as $cells) { $this->complete($run, 'memory-tutorial', ['cells' => $cells])->assertStatus(422); }
-        $this->complete($run, 'pattern-one', ['choice' => 'unknown'])->assertStatus(422);
-        $this->complete($run, 'logic-one', ['order' => ['sun', 'star', 'star']])->assertStatus(422);
-        $this->complete($run, 'logic-one', ['order' => ['sun', 'star']])->assertStatus(422);
-        $this->complete($run, 'logic-one', ['order' => ['a' => 'sun', 'b' => 'star', 'c' => 'moon']])->assertStatus(422);
-        $this->complete($run, 'memory-tutorial', ['cells' => ['a' => 1]])->assertStatus(422);
-        $this->complete($run, 'logic-one', ['order' => ['sun', 'star', 'secret']])->assertStatus(422);
-        $this->complete($run, 'nonexistent', ['acknowledged' => true])->assertStatus(409);
+        foreach ([false, 1, 'true'] as $value) { $this->complete($run, 'remember-word', ['acknowledged' => $value])->assertStatus(422); }
+        $this->complete($run, 'remember-word', ['acknowledged' => true, 'next' => 'done'])->assertStatus(422);
+        $this->postJson('/api/v1/runs/'.$run['id'].'/steps/remember-word/complete', ['answer' => ['acknowledged' => true], 'next' => 'done'])->assertStatus(422);
+        $choice = collect($run['configuration']['steps'])->firstWhere('type', 'single_choice');
+        $this->complete($run, $choice['id'], ['choice' => 'unknown'])->assertStatus(422);
+        $this->complete($run, $choice['id'], ['choice' => $choice['options'][0]['id']])->assertStatus(409);
+        $this->complete($run, 'missing', ['acknowledged' => true])->assertStatus(409);
+        $this->complete($run, 'report-offer', ['offer_id' => 'unknown', 'acknowledged' => true])->assertStatus(422);
+        $this->complete($run, 'report-offer', ['offer_id' => 'report-intro-v3', 'acknowledged' => true, 'card' => 'forbidden'])->assertStatus(422);
+        $email = collect($run['configuration']['steps'])->firstWhere('type', 'email');
+        $this->complete($run, $email['id'], ['email' => 'invalid'])->assertStatus(422);
         $this->withSession(['visitor_id' => 'stranger']);
         $this->getJson('/api/v1/runs/'.$run['id'])->assertNotFound();
-        $this->complete($run, 'welcome', ['acknowledged' => true])->assertNotFound();
+        $this->complete($run, 'remember-word', ['acknowledged' => true])->assertNotFound();
         $this->assertDatabaseCount('events', 1);
         $this->assertSame([], json_decode(DB::table('funnel_runs')->first()->answers, true));
     }
 
-    public function test_failed_milestone_rolls_back_progress_and_generated_result(): void
+    public function test_failed_milestone_rolls_back_answer_transition_and_private_report(): void
     {
-        $run = $this->start();
-        while ($run['current_step'] !== 'logic-two') {
-            $screen = Configuration::screen($run['configuration'], $run['current_step']);
-            $run = $this->complete($run, $screen['id'], $this->answer($screen))->assertOk()->json();
-        }
-        DB::table('events')->insert(['run_id' => $run['id'], 'name' => 'quiz_completed', 'created_at' => now()]);
-        $this->complete($run, 'logic-two', ['order' => ['wave', 'leaf', 'circle', 'spark']])->assertStatus(500);
+        $run = $this->advanceTo($this->start(), 'confirm-answers');
+        DB::table('events')->insert(['run_id' => $run['id'], 'name' => 'quiz_confirmed_v3', 'step_id' => 'confirm-answers', 'created_at' => now()]);
+        $this->complete($run, 'confirm-answers', ['acknowledged' => true])->assertStatus(500);
         $this->getJson('/api/v1/runs/'.$run['id'])->assertExactJson($run);
-        $this->assertDatabaseMissing('events', ['step_id' => 'logic-two']);
+        $this->assertNull(json_decode(DB::table('funnel_runs')->first()->result, true)['report']);
+        $this->assertDatabaseMissing('events', ['name' => 'step_completed', 'step_id' => 'confirm-answers']);
     }
 
-    public function test_publication_rejects_broken_graphs_and_parameters(): void
+    public function test_publication_rejects_unsupported_schemas_and_broken_graphs_or_parameters(): void
     {
-        $original = json_decode(file_get_contents(resource_path('funnel/brainsprint-v2.json')), true);
-        $mutations = [
+        $original = $this->start()['configuration'];
+        $choiceIndex = array_search('single_choice', array_column($original['steps'], 'type'));
+        foreach ([
             fn (&$c) => $c['steps'][0]['next'] = 'missing',
-            fn (&$c) => $c['steps'][3]['next'] = 'welcome',
-            fn (&$c) => $c['steps'][2]['next'] = 'memory-tutorial',
-            fn (&$c) => $c['steps'][1]['branch']['incorrect'] = 'missing',
-            fn (&$c) => $c['steps'][2]['next'] = 'memory-two',
-            fn (&$c) => $c['steps'][3]['grid_size'] = 20,
-            fn (&$c) => $c['steps'][5]['correct_choice'] = 'missing',
-            fn (&$c) => $c['steps'][7]['correct_order'] = ['sun', 'sun', 'moon'],
-            fn (&$c) => $c['steps'][3]['next'] = 'done',
-            fn (&$c) => $c['steps'][9]['enabled'] = false,
-            fn (&$c) => $c['schema_version'] = '2',
-            fn (&$c) => $c['steps'][0]['enabled'] = 1,
-            fn (&$c) => $c['steps'][1]['pattern'] = ['0', '4', '8'],
+            fn (&$c) => $c['steps'][1]['next'] = $c['entry'],
+            fn (&$c) => $c['steps'][0]['next'] = 'done',
+            fn (&$c) => $c['steps'][0]['enabled'] = false,
+            fn (&$c) => $c['steps'][$choiceIndex]['options'][0]['id'] = '!invalid',
             fn (&$c) => $c['steps'][0]['grid_size'] = 3,
+            fn (&$c) => $c['offer']['intro_cents'] = 0,
+            fn (&$c) => $c['schema_version'] = '3',
+            fn (&$c) => $c['schema_version'] = 2,
+            fn (&$c) => $c['schema_version'] = null,
             fn (&$c) => $c['result']['private'] = 'unsupported',
-        ];
-        foreach ($mutations as $mutate) {
+        ] as $mutate) {
             $config = $original;
             $mutate($config);
             try { Configuration::validate($config); $this->fail('Invalid configuration accepted.'); }
-            catch (ValidationException $e) { $this->assertNotEmpty($e->errors()); }
+            catch (ValidationException $error) { $this->assertNotEmpty($error->errors()); }
         }
         $this->assertDatabaseCount('funnel_versions', 1);
     }
 
-    public function test_configuration_reordering_disabling_and_pinning_affect_only_new_runs(): void
+    public function test_republication_and_array_reordering_do_not_repin_existing_runs(): void
     {
         $old = $this->start();
         $config = $old['configuration'];
-        $config['steps'][3]['enabled'] = false;
-        $config['steps'][4]['grid_size'] = 3;
-        $config['steps'][4]['pattern'] = [0, 4];
-        $config['steps'][4]['reveal_seconds'] = 3;
-        // Reorder two pattern rounds through explicit transitions; array order is irrelevant.
-        $config['steps'][4]['next'] = 'pattern-two';
-        $config['steps'][6]['next'] = 'pattern-one';
-        $config['steps'][5]['next'] = 'logic-one';
+        $config['steps'][0]['word'] = 'New word';
         $config['steps'] = array_reverse($config['steps']);
         Configuration::validate($config);
         DB::table('funnel_versions')->insert(['id' => 'reconfigured', 'configuration' => json_encode($config), 'published_at' => now()->addMinute()]);
-        $this->getJson('/api/v1/bootstrap')->assertJsonPath('configuration_version', 'reconfigured')->assertJsonPath('run.configuration', $old['configuration']);
+        $this->getJson('/api/v1/bootstrap')->assertJsonPath('configuration_version', $old['configuration_version'])->assertJsonPath('run.configuration', $old['configuration']);
         $this->postJson('/api/v1/runs')->assertJsonPath('configuration_version', $old['configuration_version']);
         $this->withSession(['visitor_id' => 'new-owner']);
-        $run = $this->start();
-        $this->assertSame('reconfigured', $run['configuration_version']);
-        $this->complete($run, 'welcome', ['acknowledged' => true])->assertOk();
-        $this->complete($run, 'memory-tutorial', ['cells' => [0, 4, 8]])->assertJsonPath('current_step', 'memory-two');
-        $this->complete($run, 'memory-one', ['cells' => []])->assertStatus(409);
-        $this->complete($run, 'memory-two', ['cells' => [3, 8]])->assertJsonPath('current_step', 'pattern-two');
-        $this->complete($run, 'pattern-two', ['choice' => 'left'])->assertJsonPath('current_step', 'pattern-one');
+        $this->assertSame('reconfigured', $this->start()['configuration_version']);
+    }
+
+    public function test_retired_run_never_exposes_old_content_and_can_be_deleted_before_restart(): void
+    {
+        // Minimal unsupported records, not runnable historical fixtures.
+        foreach (['{}', '{"schema_version":2}'] as $index => $configuration) {
+            $version = 'retired-'.$index;
+            DB::table('funnel_versions')->insert(['id' => $version, 'configuration' => $configuration, 'published_at' => now()->addMinute()]);
+            $this->withSession(['visitor_id' => 'owner']);
+            $id = (string) Str::uuid();
+            DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => 'owner', 'funnel_version_id' => $version, 'current_step' => 'old-step', 'answers' => '{"old-step":{"private":true}}', 'result' => '{"private":"old-result"}', 'created_at' => now(), 'updated_at' => now()]);
+            $this->getJson('/api/v1/bootstrap')->assertOk()->assertJsonPath('restart_required', true)->assertJsonPath('run', null)->assertJsonPath('configuration.schema_version', 3)->assertDontSee('old-step')->assertDontSee('old-result');
+            $this->getJson('/api/v1/runs/'.$id)->assertStatus(410)->assertJsonPath('error.code', 'run_retired');
+            $this->postJson('/api/v1/runs')->assertStatus(410);
+            $this->postJson('/api/v1/runs/'.$id.'/steps/old-step/complete', ['answer' => ['acknowledged' => true]])->assertStatus(410);
+            $this->postJson('/api/v1/events', ['event_id' => (string) Str::uuid(), 'name' => 'step_viewed', 'run_id' => $id, 'step_id' => 'old-step'])->assertStatus(410);
+            $this->withSession(['visitor_id' => 'stranger']);
+            $this->getJson('/api/v1/runs/'.$id)->assertNotFound();
+            $this->postJson('/api/v1/runs/'.$id.'/steps/old-step/complete', ['answer' => ['acknowledged' => true]])->assertNotFound();
+            $this->withSession(['visitor_id' => 'owner']);
+            $this->call('POST', '/api/v1/privacy/delete', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'], '{}')->assertOk();
+            $this->assertDatabaseMissing('funnel_runs', ['id' => $id]);
+            $this->getJson('/api/v1/bootstrap')->assertJsonPath('restart_required', false);
+            $this->assertSame(3, $this->start()['configuration']['schema_version']);
+        }
     }
 }

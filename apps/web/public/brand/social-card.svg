@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>BrainSprint — A fresh perspective</title>
+  <desc>Give your curiosity a little challenge. Words, numbers and shapes. An interactive demo with illustrative results for entertainment.</desc>
+  <rect width="1200" height="630" fill="#f5f6f8"/>
+
+  <g transform="translate(72 60)">
+    <rect width="52" height="52" rx="12" fill="#4f5bd0"/>
+    <g fill="none" stroke="#f5f6f8" stroke-width="4.3" stroke-linecap="round">
+      <path d="M26 11.4v7m0 15.2v7M11.4 26h7m15.2 0h7M15.6 15.6l5 5m10.8 10.8 5 5M15.6 36.4l5-5"/>
+      <path d="m31.4 20.6 5-5" stroke="#bfc6ff"/>
+    </g>
+  </g>
+  <text x="140" y="97" fill="#252539" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700" letter-spacing="-1">BrainSprint</text>
+
+  <text x="72" y="193" fill="#4f5bd0" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" letter-spacing="2.4">WORDS · NUMBERS · SHAPES</text>
+  <g fill="#252539" font-family="Georgia, 'Times New Roman', serif" font-size="64" letter-spacing="-2">
+    <text x="69" y="279">Give your curiosity</text>
+    <text x="69" y="352">a little challenge.</text>
+  </g>
+  <text x="72" y="419" fill="#727486" font-family="Arial, Helvetica, sans-serif" font-size="24">A playful journey through everyday thinking.</text>
+
+  <rect x="816" y="172" width="312" height="288" rx="28" fill="#eaecff"/>
+  <g fill="none" stroke="#4f5bd0" stroke-width="5" stroke-linejoin="round">
+    <circle cx="884" cy="228" r="20"/>
+    <rect x="952" y="208" width="40" height="40" rx="5"/>
+    <path d="m1060 206 24 42h-48Z"/>
+    <rect x="864" y="296" width="40" height="40" rx="5"/>
+    <path d="m972 294 24 42h-48Z"/>
+    <circle cx="1060" cy="316" r="20"/>
+    <path d="m884 382 24 42h-48Z"/>
+    <circle cx="972" cy="404" r="20"/>
+  </g>
+  <rect x="1026" y="370" width="68" height="68" rx="16" fill="#4f5bd0"/>
+  <g transform="translate(1026 370) scale(.1328125)" fill="none" stroke="#f5f6f8" stroke-width="42" stroke-linecap="round">
+    <path d="M256 112v69m0 150v69M112 256h69m150 0h69M154 154l49 49m106 106 49 49M154 358l49-49"/>
+    <path d="m309 203 49-49" stroke="#bfc6ff"/>
+  </g>
+
+  <path d="M72 497H1128" stroke="#e2e3eb"/>
+  <rect x="72" y="529" width="78" height="30" rx="15" fill="#e5e8fb"/>
+  <text x="111" y="549" fill="#4f5bd0" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" letter-spacing="1" text-anchor="middle">DEMO</text>
+  <text x="166" y="550" fill="#727486" font-family="Arial, Helvetica, sans-serif" font-size="18">Interactive challenges · Illustrative results · For entertainment</text>
+</svg>

@@ -1,4 +1,4 @@
-/* V3 is deliberately scoped so immutable historical journeys keep their presentation. */
+/* Current funnel presentation. */
 .v3-shell {
   --v3-paper: #f5f6f8;
   --v3-ink: #252539;
@@ -21,6 +21,7 @@
 .v3-shell h1 { font-size: clamp(30px, 6.8vw, 42px); line-height: 1.16; letter-spacing: -.035em; text-wrap: balance; }
 .v3-shell h2 { font-size: 30px; letter-spacing: -.025em; line-height: 1.18; }
 .v3-shell p { line-height: 1.55; }
+html:has(.v3-shell dialog[open]) { overflow: hidden; }
 .v3-shell button:disabled { cursor: default; opacity: .55; }
 .v3-shell button:focus-visible, .v3-shell a:focus-visible, .v3-shell input:focus-visible, .v3-shell summary:focus-visible { outline: 3px solid var(--v3-violet); outline-offset: 4px; }
 .v3-header { width: min(100% - 40px, 520px); margin: 0 auto; padding-top: max(24px, env(safe-area-inset-top)); }

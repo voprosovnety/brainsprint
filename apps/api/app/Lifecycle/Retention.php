@@ -32,7 +32,7 @@ class Retention
                     return;
                 }
                 $runs = DB::table('funnel_runs')->where('visitor_id', $visitor);
-                // Include legacy linked events even if their visitor column is null.
+                // Include run-linked events even if their visitor column is null.
                 $events = DB::table('events')->where(fn ($q) => $q->where('visitor_id', $visitor)->orWhereIn('run_id', (clone $runs)->select('id')));
                 $counts['visitors']++;
                 $counts['runs'] += (clone $runs)->count();

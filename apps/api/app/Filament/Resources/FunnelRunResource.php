@@ -40,7 +40,6 @@ class FunnelRunResource extends Resource
         return $table->columns([
             TextColumn::make('id')->searchable()->limit(12)->tooltip(fn ($record) => $record->id),
             TextColumn::make('current_step')->searchable(),
-            TextColumn::make('variant'),
             TextColumn::make('is_synthetic')->label('Dataset')->formatStateUsing(fn ($state) => $state ? 'Synthetic' : 'Real')->badge(),
             TextColumn::make('created_at')->dateTime(),
             TextColumn::make('completed_at')->dateTime(),
@@ -56,7 +55,6 @@ class FunnelRunResource extends Resource
             TextEntry::make('visitor_id'),
             TextEntry::make('funnel_version_id'),
             TextEntry::make('current_step'),
-            TextEntry::make('variant'),
             TextEntry::make('is_synthetic')->label('Dataset')->formatStateUsing(fn ($state) => $state ? 'Synthetic' : 'Real'),
             TextEntry::make('created_at'),
             TextEntry::make('completed_at'),

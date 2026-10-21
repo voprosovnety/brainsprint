@@ -1,12 +1,14 @@
-# Release operation
+# Deployment and operations
 
-Current public URLs, account state and acceptance results belong exclusively in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). This document describes configuration and operator procedures.
+The demo runs on two Vercel projects with Neon PostgreSQL. This document describes runtime configuration, releases and data recovery.
 
-## Permanent free boundary
+- [Public demo](https://brainsprint-voprosovnety.vercel.app)
+- [Synthetic analytics](https://brainsprint-voprosovnety.vercel.app/demo-analytics)
+- [Administration](https://brainsprint-api-voprosovnety.vercel.app/admin) (authentication required)
 
-The complete personal, noncommercial demo uses two Vercel Hobby projects and Neon Free PostgreSQL 17. No card, paid resources, trial credits or keep-alive traffic are required. Hobby quotas are shared across the two projects; exhaustion can interrupt the demo. Neon includes 1 GB storage, 100 CU-hours and 5 GB monthly egress, with mandatory sleep after five idle minutes and a short six-hour recovery window. Free services provide no application availability guarantee. Recheck provider terms before changing plans or usage. Sources: [Vercel Hobby](https://vercel.com/docs/plans/hobby), [Neon plans](https://neon.com/docs/introduction/plans).
+## Hosting
 
-Render Free required card verification in the actual account, so it is excluded. serv00 registration must be manual under its terms and its account expires after 90 days without an owner login; it is not needed by this package. Vercel Container Registry storage has no verified permanent free allowance, so this package uses no container registry. Historical paid comparisons remain in [HOSTING_OPTIONS.md](HOSTING_OPTIONS.md); they authorize no spending.
+The personal, noncommercial demo uses Vercel Hobby and Neon Free PostgreSQL 17 in Frankfurt. It uses PHP functions rather than a container registry, with no persistent workers or keep-alive traffic. Provider quotas and database/function initialization can interrupt or delay requests; free hosting provides no application availability guarantee. Check current [Vercel](https://vercel.com/docs/plans/hobby) and [Neon](https://neon.com/docs/introduction/plans) terms before changing plans or usage.
 
 ## PHP function package
 
@@ -51,7 +53,7 @@ Never prefix these variables with `NEXT_PUBLIC_`. Preview environments receive n
 
 The production GitHub environment stores `RELEASE_APP_KEY`, `RELEASE_DATABASE_URL`, `RELEASE_PROXY_SECRET` and `RELEASE_ADMIN_PASSWORD`; environment variables hold `RELEASE_API_ORIGIN` and `RELEASE_ADMIN_EMAIL`. Test jobs never receive production credentials. `release-target.php` checks the dedicated Neon database name and verified TLS before operator work. The public repository uses standard GitHub-hosted runners, which have free runtime; paid runners are not enabled.
 
-`Release operations` supports manual `initialize`, `release`, `provision-admin` and `maintenance-preview`. Initialize/release operations first create and upload a bounded encrypted backup using the same storage guards as maintenance, then apply migrations and append-only validated configuration publication. Initialization also adds an idempotent labeled synthetic seed. Manual release supports explicit publication without running the separate Funnel checks workflow; the hosting build and revision/health readiness remain mandatory. Administrator provisioning reads a temporary mode-0600 password file, persists only its hash and removes the file. No default password, public registration or automatic bootstrap exists. Local access details belong only in ignored mode-0600 `.local/release-admin-access.json`.
+`Release operations` supports manual `initialize`, `release`, `provision-admin` and `maintenance-preview`. Initialize/release operations first create and upload a bounded encrypted backup using the same storage guards as maintenance, then apply migrations and append-only validated configuration publication. Initialization also adds an idempotent labeled schema-3 synthetic seed. Only `brainsprint-v3.json` is published; unsupported saved runs use the retirement/deletion flow described in the consumer contract. Retirement requires no new database schema migration and does not purge old runs or versions. Any bulk purge of unsupported production data is a separate, explicitly authorized operation after backup. Manual release supports explicit publication without running the separate Funnel checks workflow; the hosting build and revision/health readiness remain mandatory. Administrator provisioning reads a temporary mode-0600 password file, persists only its hash and removes the file. No default password, public registration or automatic bootstrap exists. Local access details belong only in ignored mode-0600 `.local/release-admin-access.json`.
 
 Automatic publication is gated by repository variable `RELEASE_DEPLOY_ENABLED=true` and a successful `Funnel checks` run for this repository's `main` commit. Superseded automatic runs stop. A serialized release applies migrations/publication, then advances `codex/release-api` to that exact checked SHA. Vercel production tracks this branch. The publisher waits for the matching public revision and healthy Laravel/admin login before advancing `codex/release-web`; the frontend project tracks that branch. No long-lived Vercel account token or production deploy credential is stored in GitHub. The official GitHub App is restricted to this repository. Normal branches/PRs cannot deploy to these production environments.
 
@@ -65,7 +67,7 @@ Before retention, the job creates a compressed PostgreSQL dump using the pinned 
 
 Only ciphertext is uploaded as `release-backup-<run ID>`, retained for three days. A 20 MiB dump cap and a 100 MiB repository artifact guard bound storage; excessive size stops the job before retention. All backup artifacts in this public repository must be assumed downloadable by others; confidentiality depends on the private recovery key. The upload must succeed before deletion runs. Plaintext exists only in a mode-0700 temporary directory and is removed automatically; no secrets or raw dump are printed.
 
-The job then executes `privacy:retention --execute --limit=500` and refreshes the labeled daily synthetic analytics sample. Retention preserves configurations, administrators and active visitors, and removes visitor groups only after more than 30 days without recorded activity. Sessions expire after their configured inactivity; expired shared cache/locks are also pruned with expiration rechecked at deletion. Each category is bounded by the limit. `privacy:retention --limit=500` previews without deleting. Application activity can be newer than an exposure, so an old landing event alone does not make an active visitor eligible.
+The job then executes `privacy:retention --execute --limit=500` and refreshes the labeled daily synthetic analytics sample. Retention preserves configurations, administrators and active visitors, and removes visitor groups only after more than 30 days without recorded activity. Sessions expire after their configured inactivity; expired shared cache/locks are also pruned with expiration rechecked at deletion. Each category is bounded by the limit. `privacy:retention --limit=500` previews without deleting. Application activity can be newer than an exposure, so an old screen event alone does not make an active visitor eligible.
 
 For recovery, download the desired encrypted artifact to a private local directory, then decrypt with OpenSSL 3:
 
@@ -75,7 +77,7 @@ openssl cms -decrypt -binary -inform DER -in brainsprint-backup.cms \
   -inkey .local/release-backup-key.pem -out .local/recovery.dump
 ```
 
-Restore first into a newly created isolated disposable PostgreSQL database using `pg_restore --exit-on-error --no-owner --no-acl`, validate the configuration/sample/admin counts and remove plaintext afterward. Never point a rehearsal at existing development or production data. The encrypted artifact is authenticated: decryption must fail if it has been altered. Actual rehearsal evidence and schedule acceptance are recorded in the implementation plan.
+Restore first into a newly created isolated disposable PostgreSQL database using `pg_restore --exit-on-error --no-owner --no-acl`, validate the configuration/sample/admin counts and remove plaintext afterward. Never point a rehearsal at existing development or production data. The encrypted artifact is authenticated: decryption must fail if it has been altered.
 
 ## Reproduce the local production-package check
 

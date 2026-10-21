@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Lifecycle\Retention;
 use App\Models\AdminUser;
 use Carbon\CarbonImmutable as Time;
-use Tests\Fixtures\LegacyFunnelSeeder as DatabaseSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -25,17 +25,17 @@ class ReleaseLifecycleTest extends TestCase
     private function createRun(string $visitor, $when, bool $synthetic = false): string
     {
         $id = (string) Str::uuid();
-        DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => $visitor, 'funnel_version_id' => DB::table('funnel_versions')->value('id'), 'current_step' => 'welcome', 'created_at' => $when, 'updated_at' => $when, 'is_synthetic' => $synthetic]);
+        DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => $visitor, 'funnel_version_id' => DB::table('funnel_versions')->value('id'), 'current_step' => 'remember-word', 'created_at' => $when, 'updated_at' => $when, 'is_synthetic' => $synthetic]);
 
         return $id;
     }
 
     private function event(?string $visitor, $when, ?string $run = null): void
     {
-        DB::table('events')->insert(['visitor_id' => $visitor, 'run_id' => $run, 'name' => $run ? 'step_viewed' : 'landing_viewed', 'created_at' => $when, 'is_synthetic' => true]);
+        DB::table('events')->insert(['visitor_id' => $visitor, 'run_id' => $run, 'name' => 'step_viewed', 'created_at' => $when, 'is_synthetic' => true]);
     }
 
-    public function test_deletion_removes_only_owned_data_including_landing_and_legacy_events(): void
+    public function test_deletion_removes_only_owned_data_including_unlinked_and_run_linked_events(): void
     {
         $owned = $this->createRun('owner', now());
         $other = $this->createRun('other', now());
@@ -81,13 +81,13 @@ class ReleaseLifecycleTest extends TestCase
         }
     }
 
-    public function test_deletion_before_start_removes_landing_and_rejects_identity_input(): void
+    public function test_deletion_before_start_removes_unlinked_events_and_rejects_identity_input(): void
     {
-        $this->event('landing-only', now());
-        $this->withSession(['visitor_id' => 'landing-only']);
+        $this->event('unlinked-visitor', now());
+        $this->withSession(['visitor_id' => 'unlinked-visitor']);
         $this->postJson('/api/v1/privacy/delete', ['visitor_id' => 'other'])->assertUnprocessable();
         $this->call('POST', '/api/v1/privacy/delete?visitor_id=other', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'], '{}')->assertUnprocessable();
-        $this->assertDatabaseHas('events', ['visitor_id' => 'landing-only']);
+        $this->assertDatabaseHas('events', ['visitor_id' => 'unlinked-visitor']);
         $this->call('POST', '/api/v1/privacy/delete', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'], '{}')->assertOk();
         $this->assertDatabaseCount('events', 0);
     }
@@ -106,7 +106,7 @@ class ReleaseLifecycleTest extends TestCase
         $sample = $this->createRun('stale-synthetic', $old, true);
         $fresh = $this->createRun('fresh', now());
         $recentEvent = $this->createRun('old-run-new-event', $old);
-        $this->event(null, now(), $recentEvent); // legacy event still refreshes the owning visitor
+        $this->event(null, now(), $recentEvent); // run-linked event still refreshes the owning visitor
         $this->event('stale-real', $old);
         $this->event(null, $old, $stale);
         $this->event('stale-orphan', $old);

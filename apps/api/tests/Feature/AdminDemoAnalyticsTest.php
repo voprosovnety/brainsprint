@@ -11,7 +11,7 @@ use App\Filament\Resources\FunnelRunResource\Pages\ListRecords;
 use App\Models\AdminUser;
 use App\Models\FunnelRun;
 use Carbon\CarbonImmutable as Time;
-use Tests\Fixtures\LegacyFunnelSeeder as DatabaseSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Filament\Auth\Pages\Login;
 use Filament\Facades\Filament;
 use Illuminate\Auth\SessionGuard;
@@ -179,8 +179,8 @@ class AdminDemoAnalyticsTest extends TestCase
     public function test_seed_is_idempotent_and_preserves_existing_records(): void
     {
         $id = (string) Str::uuid();
-        DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => 'private-real', 'funnel_version_id' => DB::table('funnel_versions')->value('id'), 'current_step' => 'welcome', 'is_synthetic' => false,
-            'answers' => '{"welcome":{"acknowledged":true}}', 'result' => '{"private":"preserve"}', 'created_at' => Time::now()->subDay(), 'updated_at' => Time::now()->subDay()]);
+        DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => 'private-real', 'funnel_version_id' => DB::table('funnel_versions')->value('id'), 'current_step' => 'remember-word', 'is_synthetic' => false,
+            'answers' => '{"remember-word":{"acknowledged":true}}', 'result' => '{"private":"preserve"}', 'created_at' => Time::now()->subDay(), 'updated_at' => Time::now()->subDay()]);
         $before = DB::table('funnel_runs')->find($id);
         $this->fixture();
         $runs = DB::table('funnel_runs')->orderBy('id')->get();
@@ -191,8 +191,8 @@ class AdminDemoAnalyticsTest extends TestCase
         $this->assertEquals($events, DB::table('events')->orderBy('id')->get());
         $this->assertEquals($versions, DB::table('funnel_versions')->orderBy('id')->get());
         $this->assertEquals($before, DB::table('funnel_runs')->find($id));
-        $this->assertSame(18, DB::table('funnel_runs')->where('is_synthetic', true)->count());
-        $this->assertSame(24, DB::table('events')->where('name', 'landing_viewed')->count());
+        $this->assertSame(24, DB::table('funnel_runs')->where('is_synthetic', true)->count());
+        $this->assertSame(24, DB::table('events')->where('name', 'funnel_started')->count());
         $this->assertSame(0, DB::table('events')->where('is_synthetic', false)->count());
     }
 
@@ -214,26 +214,23 @@ class AdminDemoAnalyticsTest extends TestCase
     {
         $this->fixture();
         $id = (string) Str::uuid();
-        DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => 'private-real', 'funnel_version_id' => DB::table('funnel_versions')->value('id'), 'current_step' => 'welcome', 'created_at' => Time::now()->subHour(), 'updated_at' => Time::now(), 'is_synthetic' => false]);
+        DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => 'private-real', 'funnel_version_id' => DB::table('funnel_versions')->value('id'), 'current_step' => 'remember-word', 'created_at' => Time::now()->subHour(), 'updated_at' => Time::now(), 'is_synthetic' => false]);
         $expected = app(AggregateService::class)->summarize(Time::now()->subDays(7), Time::now(), Time::now(), Dataset::Synthetic);
-        $response = $this->getJson('/api/v1/demo-analytics')->assertOk()->assertJsonPath('dataset', 'synthetic')->assertJsonPath('totals.runs', 18);
-        foreach (['cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment'] as $key) {
+        $response = $this->getJson('/api/v1/demo-analytics')->assertOk()->assertJsonPath('dataset', 'synthetic')->assertJsonPath('totals.runs', 24);
+        foreach (['cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds'] as $key) {
             $this->assertEquals($expected[$key], $response->json($key));
         }
-        $this->assertSame(['dataset', 'cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds', 'experiment', 'v3'], array_keys($response->json()));
+        $this->assertSame(['dataset', 'cohort', 'totals', 'stage_conversions', 'quiz_elapsed_seconds'], array_keys($response->json()));
         foreach (['visitor_id', 'run_id', 'answers', 'private-real', $id, 'utm', 'admin'] as $private) {
             $response->assertDontSee($private);
         }
-        $this->assertSame('insufficient_data', $response->json('experiment.status'));
-        $this->assertNull($response->json('experiment.winner'));
-        $this->assertSame(2, $response->json('experiment.variants.A.pending_observation'));
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
     }
 
     public function test_empty_public_sample_has_no_invented_rates(): void
     {
         $this->getJson('/api/v1/demo-analytics')->assertOk()->assertJsonPath('totals.runs', 0)
-            ->assertJsonPath('stage_conversions.quiz_completed.rate', null)->assertJsonPath('quiz_elapsed_seconds.mean', null);
+            ->assertJsonPath('stage_conversions.quiz_confirmed_v3.rate', null)->assertJsonPath('quiz_elapsed_seconds.mean', null);
     }
 
     public function test_public_query_cannot_switch_dataset_or_bounds(): void
@@ -259,7 +256,7 @@ class AdminDemoAnalyticsTest extends TestCase
     public function test_admin_utm_is_escaped_in_dashboard_and_record_details(): void
     {
         $id = (string) Str::uuid();
-        DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => 'utm-text-fixture', 'funnel_version_id' => DB::table('funnel_versions')->value('id'), 'current_step' => 'welcome',
+        DB::table('funnel_runs')->insert(['id' => $id, 'visitor_id' => 'utm-text-fixture', 'funnel_version_id' => DB::table('funnel_versions')->value('id'), 'current_step' => 'remember-word',
             'is_synthetic' => false, 'attribution' => json_encode(['utm_source' => '<script>demo</script>']), 'created_at' => Time::now()->subHour(), 'updated_at' => Time::now()]);
         $this->actingAs($this->admin(), 'admin');
         foreach (['/admin/analytics', '/admin/runs/'.$id] as $url) {

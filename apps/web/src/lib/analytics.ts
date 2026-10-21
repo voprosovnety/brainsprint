@@ -7,7 +7,7 @@ export function campaign() {
 }
 
 type ViewEvent = {
-  name: "landing_viewed" | "step_viewed" | "result_viewed" | "paywall_reached" | "paywall_viewed_v3" | "checkout_viewed_v3" | "report_viewed_v3";
+  name: "step_viewed" | "paywall_viewed_v3" | "checkout_viewed_v3" | "report_viewed_v3";
   run_id?: string; step_id?: string;
 };
 // Small in-memory outbox; no URLs, cookies, answers or persistent browser identifiers.
@@ -35,11 +35,4 @@ export function recordView(event: ViewEvent): Promise<void> {
   })().finally(() => pending.delete(key));
   pending.set(key, delivery);
   return delivery;
-}
-
-export async function beforeStart() {
-  const landing = pending.get("landing_viewed::");
-  // Give the already-rendered exposure an opportunity to arrive before Start.
-  // Failed analytics can delay Start by at most 1.6 seconds, never freeze it.
-  if (landing) await Promise.race([landing, new Promise(resolve => setTimeout(resolve, 1600))]);
 }

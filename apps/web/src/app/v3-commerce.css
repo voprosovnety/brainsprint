@@ -29,7 +29,8 @@
 :where(.v3-shell) .v3-commerce .vc-header { max-width: 820px; height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; margin: auto; }
 :where(.v3-shell) .v3-commerce .vc-brand { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; letter-spacing: -.7px; text-decoration: none; }
 :where(.v3-shell) .v3-commerce .vc-brand > span { font-size: 30px; line-height: 1; color: var(--vc-violet); }
-:where(.v3-shell) .v3-commerce .vc-info-button { width: 27px; height: 27px; display: grid; place-items: center; border: 1px solid #c5c7d4; background: transparent; border-radius: 50%; font-family: Georgia, serif; color: var(--vc-muted); font-size: 16px; }
+:where(.v3-shell) .v3-commerce .vc-info-button { position: relative; width: 27px; height: 27px; display: grid; place-items: center; border: 1px solid #c5c7d4; background: transparent; border-radius: 50%; font-family: Georgia, serif; color: var(--vc-muted); font-size: 16px; }
+:where(.v3-shell) .v3-commerce :is(.vc-info-button, .vc-dialog-close)::before { content: ""; position: absolute; inset: -8px; }
 :where(.v3-shell) .v3-commerce .vc-community-strip { min-height: 46px; background: #eeeffb; border-block: 1px solid #e4e6f6; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 12px; }
 :where(.v3-shell) .v3-commerce .vc-stars { color: #6674dc; font-size: 15px; letter-spacing: 2px; }
 :where(.v3-shell) .v3-commerce .vc-mini-avatars { display: flex; padding-left: 6px; }
@@ -169,7 +170,7 @@
 :where(.v3-shell) .v3-commerce .vc-guide-pages h3 { margin: 8px 0 16px; font-size: 27px; }
 :where(.v3-shell) .v3-commerce .vc-guide-pages p { color: #71758f; font-size: 14px; }
 :where(.v3-shell) .v3-commerce p.vc-finished { color: #6571c4; margin-bottom: 0; padding: 14px; background: #e3e7fb; border-radius: 10px; font-size: 13px; }
-:where(.v3-shell) .v3-commerce .vc-dialog { position: fixed; inset: 0; margin: auto; height: fit-content; width: min(500px, calc(100% - 28px)); max-height: calc(100dvh - 40px); padding: 38px 30px 30px; border: 1px solid #dce0f3; border-radius: 20px; background: #fff; color: var(--vc-ink); text-align: left; overflow-y: auto; box-shadow: 0 25px 100px #24274435; }
+:where(.v3-shell) .v3-commerce .vc-dialog { position: fixed; inset: 0; margin: auto; height: fit-content; width: min(500px, calc(100% - 28px)); max-height: calc(100dvh - 40px); padding: 38px 30px 30px; border: 1px solid #dce0f3; border-radius: 20px; background: #fff; color: var(--vc-ink); text-align: left; overflow-y: auto; overscroll-behavior: contain; box-shadow: 0 25px 100px #24274435; }
 :where(.v3-shell) .v3-commerce .vc-dialog::backdrop { background: #24253f70; backdrop-filter: blur(4px); }
 :where(.v3-shell) .v3-commerce .vc-dialog h2 { font-size: 35px; margin-top: 12px; }
 :where(.v3-shell) .v3-commerce .vc-dialog-close { position: absolute; top: 10px; right: 13px; width: 32px; height: 32px; background: #f1f2f8; border-radius: 50%; color: #7c819e; font-size: 25px; line-height: 1; display: grid; place-items: center; }

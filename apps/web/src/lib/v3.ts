@@ -10,7 +10,6 @@ export type V3Screen = {
 export type V3Answer = { choice: string } | { acknowledged: true } | { focus: "yes" | "no"; practice: "yes" | "no" } | { email: string | null } | { offer_id: string; acknowledged: true } | { decision: "accept" | "decline" };
 export type V3Configuration = {
   schema_version: 3; entry: string;
-  landing: { eyebrow: string; title: string; description: string; cta: string };
   result: { title: string; disclaimer: string };
   offer: { id: string; comparison_cents: number; intro_cents: number; intro_days: number; renewal_cents: number; renewal_weeks: number; countdown_seconds: number; guide_id: string; guide_comparison_cents: number; guide_cents: number };
   steps: V3Screen[];
@@ -27,4 +26,4 @@ export type V3Run = {
   result: V3Report | null;
   commerce: { deadline: string | null; unlocked: boolean; upsell: "accept" | "decline" | null };
 };
-export type V3Bootstrap = { experiment: null; configuration_version: string; configuration: V3Configuration; run: V3Run | null };
+export type V3Bootstrap = { experiment: null; restart_required: boolean; configuration_version: string; configuration: V3Configuration; run: V3Run | null };

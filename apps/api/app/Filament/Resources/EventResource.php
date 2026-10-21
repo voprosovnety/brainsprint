@@ -39,7 +39,6 @@ class EventResource extends Resource
         return $table->columns([
             TextColumn::make('name')->searchable(),
             TextColumn::make('step_id')->searchable(),
-            TextColumn::make('variant'),
             TextColumn::make('is_synthetic')->label('Dataset')->formatStateUsing(fn ($state) => $state ? 'Synthetic' : 'Real')->badge(),
             TextColumn::make('created_at')->dateTime(),
         ])->defaultSort('created_at', 'desc')
@@ -56,7 +55,6 @@ class EventResource extends Resource
             TextEntry::make('name'),
             TextEntry::make('step_id'),
             TextEntry::make('funnel_version_id'),
-            TextEntry::make('variant'),
             TextEntry::make('is_synthetic')->label('Dataset')->formatStateUsing(fn ($state) => $state ? 'Synthetic' : 'Real'),
             TextEntry::make('created_at'),
             ViewEntry::make('attribution')->view('filament.entries.json')->state(fn ($record) => json_encode($record->attribution, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))->columnSpanFull(),

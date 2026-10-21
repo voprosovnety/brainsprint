@@ -33,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
             $status = $e instanceof ValidationException ? 422 : ($e instanceof HttpExceptionInterface ? $e->getStatusCode() : 500);
-            $codes = [404 => 'not_found', 409 => 'state_conflict', 419 => 'csrf_expired', 422 => 'invalid_answer', 429 => 'rate_limited', 503 => 'unavailable'];
+            $codes = [404 => 'not_found', 409 => 'state_conflict', 410 => 'run_retired', 419 => 'csrf_expired', 422 => 'invalid_answer', 429 => 'rate_limited', 503 => 'unavailable'];
             $message = match ($status) {
                 419 => 'Your session needs refreshing. Reload this page and try again.',
                 422 => 'Check your answer and try again.',

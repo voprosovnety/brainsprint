@@ -92,20 +92,29 @@ function Processing({ screen, busy, saving, onSubmit }: Props) {
   const reduceMotion = useRef(false);
   const prompts = screen.prompts || [];
   const duration = screen.duration_seconds || 5;
-  const nextPrompt = prompts.find((p, i) => !preferences[p.id] && seconds >= duration * (i + 1) / (prompts.length + 1));
+  const nextPrompt = !info && prompts.find((p, i) => !preferences[p.id] && seconds >= duration * (i + 1) / (prompts.length + 1));
   const complete = seconds >= duration && prompts.every(p => !!preferences[p.id]);
   const modal = !!nextPrompt || info;
-  useEffect(() => { reduceMotion.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches; }, []);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => { reduceMotion.current = media.matches; };
+    update(); media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   useEffect(() => {
     if (modal || complete) return;
     const timer = window.setInterval(() => { if (document.visibilityState === "visible") setSeconds(value => Math.min(duration, value + (reduceMotion.current ? duration : 0.25))); }, 250);
     return () => clearInterval(timer);
   }, [modal, complete, duration]);
   useEffect(() => {
-    if (modal && !dialog.current?.open) dialog.current?.showModal();
-    else if (!modal && dialog.current?.open) dialog.current?.close();
-  }, [modal]);
-  useEffect(() => { if (complete && !prompts.length && !busy && !autoSubmitted.current) { autoSubmitted.current = true; onSubmit({ acknowledged: true }); } }, [complete, busy, onSubmit, prompts.length]);
+    const element = dialog.current;
+    if (modal) {
+      if (!element?.open) element?.showModal();
+      const title = element?.querySelector("h2");
+      if (title) { title.tabIndex = -1; title.focus({ preventScroll: true }); }
+    } else if (element?.open) element.close();
+  }, [modal, nextPrompt && nextPrompt.id, info]);
+  useEffect(() => { if (complete && !modal && !prompts.length && !busy && !autoSubmitted.current) { autoSubmitted.current = true; onSubmit({ acknowledged: true }); } }, [complete, modal, busy, onSubmit, prompts.length]);
   const stage = Math.min((screen.stages?.length || 1) - 1, Math.floor(seconds / duration * (screen.stages?.length || 1)));
   function finish() {
     if (preferences.focus && preferences.practice) onSubmit({ focus: preferences.focus, practice: preferences.practice });

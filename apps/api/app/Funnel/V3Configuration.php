@@ -11,6 +11,7 @@ class V3Configuration
     public static function validate(array $config): void
     {
         $fail = fn (string $message) => throw ValidationException::withMessages(['configuration' => $message]);
+        if (($config['schema_version'] ?? null) !== 3) { $fail('schema_version must be the integer 3.'); }
         $base = ['id', 'type', 'title', 'description', 'enabled', 'variant', 'next'];
         $parameters = [
             'word_intro' => ['word', 'cta'],
@@ -25,18 +26,13 @@ class V3Configuration
             'upsell' => ['offer_id', 'decline_next'],
             'final' => ['guide'],
         ];
-        if (array_diff(array_keys($config), ['schema_version', 'entry', 'landing', 'result', 'offer', 'steps'])) {
+        if (array_diff(array_keys($config), ['schema_version', 'entry', 'result', 'offer', 'steps'])) {
             $fail('Unknown configuration fields.');
         }
         $asset = ['string', 'max:120', 'regex:~^/v3/[a-z0-9-]+\.svg$~'];
         Validator::make($config, [
             'schema_version' => ['required', Rule::in([3])],
             'entry' => ['required', 'string', 'max:40'],
-            'landing' => ['required', 'array:eyebrow,title,description,cta'],
-            'landing.eyebrow' => ['required', 'string', 'max:100'],
-            'landing.title' => ['required', 'string', 'max:160'],
-            'landing.description' => ['required', 'string', 'max:600'],
-            'landing.cta' => ['required', 'string', 'max:60'],
             'result' => ['required', 'array:title,disclaimer'],
             'result.title' => ['required', 'string', 'max:160'],
             'result.disclaimer' => ['required', Rule::in(['Illustrative sample content, independent of answer correctness.'])],

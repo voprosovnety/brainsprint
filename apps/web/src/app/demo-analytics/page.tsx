@@ -7,10 +7,14 @@ import "./analytics.css";
 
 const stages = [
   ["funnel_started", "Started", "Opened the challenge"],
-  ["quiz_completed", "Quiz completed", "Reached an illustrative result"],
-  ["result_viewed", "Result viewed", "Actually saw the snapshot"],
-  ["paywall_reached", "Boundary viewed", "Saw the no-payment finish screen"],
-  ["demo_completed", "Demo finished", "Confirmed the final step"],
+  ["quiz_confirmed_v3", "Quiz confirmed", "Confirmed the quiz responses"],
+  ["processing_completed_v3", "Report prepared", "Finished report preparation"],
+  ["paywall_viewed_v3", "Offer viewed", "Actually saw the simulated report offer"],
+  ["checkout_viewed_v3", "Checkout viewed", "Opened the mock checkout"],
+  ["mock_unlocked_v3", "Report unlocked", "Confirmed the simulated unlock"],
+  ["upsell_decided_v3", "Guide choice saved", "Accepted or declined the guide"],
+  ["report_viewed_v3", "Report viewed", "Actually saw the unlocked report"],
+  ["funnel_completed_v3", "Journey finished", "Confirmed the final step"],
 ];
 const date = (value: string) => new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 
@@ -47,14 +51,9 @@ export default function DemoAnalyticsPage() {
               const conversion = data.stage_conversions[key];
               return <li key={key}><div className="analytics-stage-copy"><span>{title}</span><small>{description}</small></div><div className="analytics-track"><div style={{ width: `${Math.max(0, Math.min(100, data.totals[key] / data.totals.runs * 100))}%` }} /></div><strong>{data.totals[key]}</strong><div className="analytics-stage-rate">{conversion ? <><b>{formatRate(conversion)}</b><small>{conversion.numerator} / {conversion.denominator} eligible at previous stage</small></> : <small>Unique observed starts</small>}</div></li>;
             })}</ol>
-            <p className="analytics-footnote">Bars show observed runs. Conversion uses the intersection with the previous stage and its eligible denominator. Missing screen views are never filled in. The boundary has no payment or checkout.</p>
+            <p className="analytics-footnote">Bars show observed runs. Conversion uses the intersection with the previous stage and its eligible denominator. Missing screen views are never filled in. Mock unlocks and guide choices are simulated; no purchase or revenue is recorded.</p>
           </section>
-          {data.v3 && <section className="analytics-journey" aria-labelledby="v3-heading"><div className="analytics-section-head"><div><p className="analytics-label">V3 journeys · separate cohort</p><h2 id="v3-heading">From first word to a new perspective.</h2></div><p>{data.v3.runs} synthetic runs</p></div><ol className="analytics-stages">{Object.entries(data.v3.totals).map(([key, count]) => { const rate = data.v3.stage_conversions[key]; return <li key={key}><div className="analytics-stage-copy"><span>{key.replace(/_v3$/, "").replaceAll("_", " ")}</span><small>Observed unique journeys</small></div><div className="analytics-track"><div style={{width: `${data.v3.runs ? Math.min(100, count / data.v3.runs * 100) : 0}%`}} /></div><strong>{count}</strong><div className="analytics-stage-rate">{rate && <><b>{formatRate(rate)}</b><small>{rate.numerator} / {rate.denominator} eligible at previous stage</small></>}</div></li>; })}</ol><p className="analytics-footnote">Mock unlocks and guide choices are demonstration states. No purchase or revenue is recorded. Historical stages and the landing experiment below retain their original meanings.</p></section>}
-          <section className="analytics-experiment" aria-labelledby="experiment-heading"><div className="analytics-section-head"><div><p className="analytics-label">The landing experiment</p><h2 id="experiment-heading">Two invitations. One challenge.</h2></div><span className="analytics-evidence">Insufficient evidence</span></div><p className="analytics-experiment-intro">A keeps the Memory preview. B introduces all three categories. Rates below use visitors whose full {data.cohort.observation_hours}-hour window has elapsed after their first landing view.</p>
-            <div className="analytics-variants">{(["A", "B"] as const).map(variant => { const v = data.experiment.variants[variant]; return <article key={variant}><div className="analytics-variant-title"><span>{variant}</span><h3>{variant === "A" ? "A curious detour" : "Find my rhythm"}</h3></div><p className="analytics-variant-counts">{v.exposed} exposed · {v.eligible_exposed} eligible · {v.pending_observation} pending</p><dl>{[["Started", v.start_conversion], ["Completed quiz", v.quiz_conversion], ["Viewed boundary", v.boundary_conversion]].map(([label, rate]) => { const r = rate as typeof v.start_conversion; return <div key={label as string}><dt>{label as string}</dt><dd><strong>{formatRate(r)}</strong><small>{r.numerator} / {r.denominator} eligible visitors</small></dd></div>; })}</dl></article>; })}</div>
-            <p className="analytics-footnote">A separate first-exposure cohort: these denominators differ from the run cohort above. Pending visitors are waiting for follow-up, not counted as failures. No statistical winner is declared.</p>
-          </section>
-          <section className="analytics-timing"><div><p className="analytics-label">Time, with context</p><h2>{data.quiz_elapsed_seconds.mean === null ? "No completed quizzes yet" : `${Math.round(data.quiz_elapsed_seconds.mean)} seconds on average`}</h2></div><p>From start to quiz completion across {data.quiz_elapsed_seconds.count} observed quizzes. Wall-clock time includes pauses and background time; it is not active play time.</p></section>
+          <section className="analytics-timing"><div><p className="analytics-label">Time, with context</p><h2>{data.quiz_elapsed_seconds.mean === null ? "No confirmed quizzes yet" : `${Math.round(data.quiz_elapsed_seconds.mean)} seconds on average`}</h2></div><p>From start to quiz confirmation across {data.quiz_elapsed_seconds.count} confirmed quizzes. Wall-clock time includes pauses and background time; it is not active play time.</p></section>
         </>}
       </>}
       <footer className="analytics-footer"><p>Illustrative sample. No payments, scores, or scientific claims.</p><a href="/">Make a little room for curiosity ↗</a></footer>

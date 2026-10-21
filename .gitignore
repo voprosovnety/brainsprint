@@ -34,3 +34,6 @@ test-results/
 
 *.tsbuildinfo
 .vercel/
+
+# Private agent instructions (including generated Next.js guidance)
+AGENTS.md

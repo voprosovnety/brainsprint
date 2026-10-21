@@ -67,11 +67,7 @@ assert call(stranger, f"runs/{run['id']}/steps/{run['current_step']}/complete", 
 while run['current_step'] != 'done':
     screen = next(s for s in run['configuration']['steps'] if s['id'] == run['current_step'])
     kind = screen['type']
-    if kind in ('visual_memory', 'tutorial'):
-        answer = {'cells': screen['pattern']}
-    elif kind == 'pattern':
-        answer = {'choice': screen['correct_choice']}
-    elif kind in ('single_choice', 'scale'):
+    if kind in ('single_choice', 'scale'):
         answer = {'choice': screen['options'][0]['id']}
     elif kind == 'processing' and screen.get('prompts'):
         answer = {'focus': 'yes', 'practice': 'no'}
@@ -82,8 +78,6 @@ while run['current_step'] != 'done':
         answer = {'offer_id': screen['offer_id'], 'acknowledged': True}
     elif kind == 'upsell':
         answer = {'decision': os.environ.get('BRAINSPRINT_GUIDE_CHOICE', 'accept')}
-    elif kind == 'logic':
-        answer = {'order': screen['correct_order']}
     else:
         answer = {'acknowledged': True}
     step = f"runs/{run['id']}/steps/{screen['id']}/complete"
@@ -93,13 +87,13 @@ while run['current_step'] != 'done':
     assert completed[0][1] == completed[1][1]
     saved = completed[0][1]
     assert progress_call(owner, 'bootstrap')[1]['run'] == saved
-    if kind == 'visual_memory':
-        conflicting = [] if answer['cells'] else [0]
-        assert progress_call(owner, step, {'answer': {'cells': conflicting}})[0] == 409
+    if kind == 'single_choice':
+        alternative = screen['options'][1]['id']
+        assert progress_call(owner, step, {'answer': {'choice': alternative}})[0] == 409
     if run['result']:
         assert saved['result'] == run['result']
     run = saved
-assert run['demo_completed'] and run['result']['kind'] == ('illustrative_sample' if run['configuration'].get('schema_version') == 3 else 'illustrative_demo')
+assert run['demo_completed'] and run['result']['kind'] == 'illustrative_sample'
 # One session reaching its quota must not exhaust another session's quota.
 limited = browser()
 call(limited, 'bootstrap')
@@ -122,4 +116,4 @@ assert progress_call(owner, f"runs/{run['id']}")[0] == 404
 assert call(stranger, 'bootstrap')[0] == 200
 # A stale cookie replay cannot recover the deleted visitor identity.
 assert call(clients[0], 'bootstrap')[1]['run'] is None
-print('PASS: deletion CSRF/origin/body/rotation/clean restore/stale-cookie replay; full funnel, actual cookies, CSRF, origin, concurrent retries, restoration, ownership, stable snapshot/finish, independent rate limits')
+print('PASS: deletion CSRF/origin/body/rotation/clean restore/stale-cookie replay; full funnel, actual cookies, CSRF, origin, concurrent retries, restoration, ownership, stable report/finish, independent rate limits')
