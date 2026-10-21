@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">BrainSprint — a little curiosity goes a long way.</title>
+  <desc id="description">A lavender product illustration featuring a word memory screen, a rotating shape puzzle and a sample report. 39 quiz responses, 23 original visual puzzles, one continuous journey. These are interface illustrations, not screenshots.</desc>
+  <defs>
+    <linearGradient id="backdrop" x1="0" y1="0" x2="1200" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6F5FC"/>
+      <stop offset="1" stop-color="#E8EBFF"/>
+    </linearGradient>
+    <linearGradient id="report" x1="972" y1="309" x2="1124" y2="453" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7E8AF7"/>
+      <stop offset="1" stop-color="#4F5BD0"/>
+    </linearGradient>
+    <filter id="shadow" x="-35%" y="-25%" width="180%" height="170%">
+      <feDropShadow dy="14" stdDeviation="18" flood-color="#343766" flood-opacity=".12"/>
+    </filter>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#BCC3EC" fill-opacity=".45"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="600" rx="28" fill="url(#backdrop)"/>
+  <circle cx="959" cy="226" r="239" stroke="#D7DCF8"/>
+  <circle cx="959" cy="226" r="183" stroke="#D7DCF8"/>
+  <path d="M560 0H1172Q1200 0 1200 28V495H560Z" fill="url(#dots)"/>
+
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="60" y="57" width="225" height="32" rx="16" fill="#E4E7FC"/>
+    <circle cx="79" cy="73" r="4" fill="#4F5BD0"/>
+    <text x="94" y="78" fill="#4F5BD0" font-size="12" font-weight="700" letter-spacing="1.5">INTERACTIVE PRODUCT DEMO</text>
+    <text x="60" y="152" fill="#252539" font-size="24" font-weight="700" letter-spacing="-.8">BrainSprint</text>
+  </g>
+
+  <g font-family="Georgia, 'Times New Roman', serif" font-size="64" fill="#252539" letter-spacing="-2.4">
+    <text x="57" y="239">A little curiosity.</text>
+    <text x="57" y="313">A whole journey.</text>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#62657D" font-size="20">
+    <text x="60" y="367">Words, numbers and shapes.</text>
+    <text x="60" y="398">Thoughtfully designed. Built end to end.</text>
+  </g>
+  <path d="M62 449H146M138 441L146 449L138 457" stroke="#4F5BD0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="165" y="454" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" letter-spacing="1.5" fill="#4F5BD0">EXPLORE. REMEMBER. DISCOVER.</text>
+
+  <!-- Interface illustrations reuse the application's palette and opening word. -->
+  <g transform="rotate(-5 777 273)">
+    <rect x="644" y="49" width="266" height="448" rx="35" fill="#FFF" filter="url(#shadow)"/>
+    <rect x="651" y="56" width="252" height="434" rx="29" fill="#F5F6F8" stroke="#E2E3EB"/>
+    <rect x="742" y="68" width="70" height="5" rx="2.5" fill="#D9DCE8"/>
+    <g font-family="Arial, Helvetica, sans-serif">
+      <text x="673" y="110" fill="#4F5BD0" font-size="22">✳</text>
+      <text x="699" y="107" fill="#252539" font-size="14" font-weight="700">BrainSprint</text>
+      <text x="845" y="106" fill="#727486" font-size="10">00:00</text>
+      <rect x="673" y="125" width="208" height="3" rx="1.5" fill="#E2E3EB"/>
+      <rect x="673" y="125" width="23" height="3" rx="1.5" fill="#7E8AF7"/>
+      <text x="777" y="160" text-anchor="middle" fill="#727486" font-size="8" letter-spacing="1.5">A MOMENT OF MEMORY</text>
+    </g>
+    <text x="777" y="194" text-anchor="middle" fill="#252539" font-family="Georgia, 'Times New Roman', serif" font-size="25">Keep one word</text>
+    <text x="777" y="224" text-anchor="middle" fill="#252539" font-family="Georgia, 'Times New Roman', serif" font-size="25">in mind.</text>
+    <rect x="673" y="249" width="208" height="137" rx="17" fill="#EAECFF"/>
+    <path d="M777 269L781 281L793 285L781 289L777 301L773 289L761 285L773 281Z" fill="#7E8AF7"/>
+    <text x="777" y="335" text-anchor="middle" fill="#252539" font-family="Georgia, 'Times New Roman', serif" font-size="29" letter-spacing="2">LANTERN</text>
+    <text x="777" y="360" text-anchor="middle" fill="#727486" font-family="Arial, Helvetica, sans-serif" font-size="10">A small word to take with you.</text>
+    <rect x="673" y="410" width="208" height="43" rx="10" fill="#4F5BD0"/>
+    <text x="777" y="436" text-anchor="middle" fill="#FFF" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700">I'll remember it →</text>
+    <rect x="741" y="473" width="72" height="4" rx="2" fill="#D9DCE8"/>
+  </g>
+
+  <g transform="rotate(7 1033 186)">
+    <rect x="923" y="87" width="220" height="180" rx="19" fill="#FFF" filter="url(#shadow)"/>
+    <text x="943" y="117" fill="#727486" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="700" letter-spacing="1.2">VISUAL REASONING</text>
+    <text x="943" y="145" fill="#252539" font-family="Georgia, 'Times New Roman', serif" font-size="20">What comes next?</text>
+    <g stroke="#6872B4" stroke-width="1.5" stroke-linejoin="round">
+      <rect x="943" y="165" width="54" height="76" rx="7" fill="#F6F7FE" stroke="#E5E7F3"/>
+      <rect x="1006" y="165" width="54" height="76" rx="7" fill="#F6F7FE" stroke="#E5E7F3"/>
+      <rect x="1069" y="165" width="54" height="76" rx="7" fill="#EAECFF" stroke="#D8DDF8"/>
+      <path d="M957 183H968V210H984V221H957Z" fill="#BFC6FB"/>
+      <path d="M1020 183H1031V210H1047V221H1020Z" fill="#BFC6FB" transform="rotate(90 1033 202)"/>
+    </g>
+    <text x="1096" y="213" text-anchor="middle" fill="#6872B4" font-family="Georgia, 'Times New Roman', serif" font-size="31">?</text>
+  </g>
+
+  <g transform="rotate(4 1041 390)">
+    <rect x="947" y="296" width="194" height="183" rx="19" fill="url(#report)" filter="url(#shadow)"/>
+    <text x="968" y="327" fill="#E8EBFF" font-family="Arial, Helvetica, sans-serif" font-size="9" letter-spacing="1.2">THE NEXT CHAPTER</text>
+    <text x="968" y="361" fill="#FFF" font-family="Georgia, 'Times New Roman', serif" font-size="24">Your thinking</text>
+    <text x="968" y="389" fill="#FFF" font-family="Georgia, 'Times New Roman', serif" font-size="24">profile.</text>
+    <path d="M970 432L995 416L1020 424L1045 408L1070 415L1118 400" stroke="#DDE2FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="995" cy="416" r="3" fill="#FFF"/>
+    <circle cx="1045" cy="408" r="3" fill="#FFF"/>
+    <text x="968" y="460" fill="#E8EBFF" font-family="Arial, Helvetica, sans-serif" font-size="10">Illustrative sample report</text>
+  </g>
+
+  <path d="M595 99L599 111L611 115L599 119L595 131L591 119L579 115L591 111Z" fill="#9AA5E9"/>
+  <circle cx="940" cy="42" r="5" fill="#B9C2F3"/>
+  <circle cx="1136" cy="287" r="4" fill="#A4AFE9"/>
+
+  <path d="M60 510H1140" stroke="#D6DBEF"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="60" y="553" fill="#4F5BD0" font-size="26" font-weight="700">39</text>
+    <text x="104" y="551" fill="#62657D" font-size="14">quiz responses</text>
+    <text x="293" y="553" fill="#4F5BD0" font-size="26" font-weight="700">23</text>
+    <text x="337" y="551" fill="#62657D" font-size="14">original visual puzzles</text>
+    <text x="574" y="553" fill="#4F5BD0" font-size="26" font-weight="700">1</text>
+    <text x="601" y="551" fill="#62657D" font-size="14">continuous journey</text>
+    <text x="1140" y="551" text-anchor="end" fill="#727486" font-size="11">INTERFACE ILLUSTRATION</text>
+  </g>
+</svg>
