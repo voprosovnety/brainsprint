@@ -88,8 +88,10 @@ Start the API:
 
 ```sh
 cd apps/api
-php artisan serve --host=127.0.0.1 --port=8008
+php artisan serve --no-reload --host=127.0.0.1 --port=8008
 ```
+
+Restart the API after changing its environment file. `--no-reload` keeps the configured environment available to the development server.
 
 In another terminal, from the repository root:
 
@@ -136,7 +138,7 @@ Run setup again to resume PostgreSQL. After schema or funnel changes, run `php a
 <details>
 <summary><strong>Automated checks and coverage</strong></summary>
 
-GitHub Actions defines PostgreSQL regression tests, a production frontend build and TypeScript checks. Existing suites primarily cover legacy funnels and shared infrastructure; complete v3 visual and journey acceptance is not established by those suites.
+GitHub Actions defines PostgreSQL regression tests, a production frontend build and TypeScript checks. The v3 API suites cover full journey progression, both guide outcomes, immutable retries, private report access, configuration publication, ownership and analytics. Shared suites cover administration, retention and cache boundaries. These automated checks do not establish browser or visual acceptance.
 
 Local tests must use the isolated `brainsprint_test` database. Helpers live in `apps/api/tests/` and `infra/checks/`; see [production-package checks](docs/DEPLOYMENT.md#reproduce-the-local-production-package-check) for the release fixture.
 

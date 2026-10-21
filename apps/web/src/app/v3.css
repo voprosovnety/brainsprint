@@ -146,7 +146,7 @@ html:has(.v3-shell dialog[open]) { overflow: hidden; }
 @media (max-width: 360px) { .v3-header, .v3-main, .v3-privacy, .v3-footer { width: calc(100% - 28px); } .v3-main { padding-top: 27px; } .v3-image-options img { height: 75px; } .v3-object-options { gap: 8px; } .v3-option { padding: 15px; } }
 @media (prefers-reduced-motion: reduce) { .v3-shell *, .v3-shell *::before, .v3-shell *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 
-/* Quiz navigation occupies one viewport; only dialogs can scroll. */
+/* Keep the action in the viewport; constrained question content can scroll. */
 html:has(.v3-quiz-shell) { overflow: hidden; }
 .v3-quiz-shell { height: 100svh; height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .v3-quiz-shell .v3-header { flex: none; padding-top: max(12px, env(safe-area-inset-top)); }
@@ -155,7 +155,8 @@ html:has(.v3-quiz-shell) { overflow: hidden; }
 .v3-info-button { width: 44px; height: 44px; padding: 0; background: transparent; color: var(--v3-muted); font-size: 23px; border-radius: 50%; }
 .v3-quiz-shell .v3-main { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; padding-top: clamp(12px, 2.5dvh, 28px); padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 .v3-quiz-shell .v3-question { flex: 1; min-height: 0; padding: 0; }
-.v3-question-body { display: flex; flex-direction: column; flex: 1; min-height: 0; container-type: size; }
+.v3-question-body { display: flex; flex-direction: column; flex: 1; min-height: 0; container-type: size; overflow-y: auto; overscroll-behavior: contain; }
+.v3-question-body:focus-visible { outline: 3px solid var(--v3-violet); outline-offset: -3px; border-radius: 4px; }
 .v3-question-body > * { flex-shrink: 0; }
 .v3-question-body .v3-question-intro { margin-bottom: clamp(10px, 3cqh, 24px); }
 .v3-question-body h1 { font-size: clamp(24px, 6.5cqh, 40px); }
@@ -167,9 +168,9 @@ html:has(.v3-quiz-shell) { overflow: hidden; }
 .v3-demographic-question .v3-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .v3-demographic-question .v3-option { font-size: 14px; gap: 8px; }
 .v3-question-body .v3-selection-hint { margin-top: 10px; font-size: 10px; }
-.v3-question-body .v3-puzzle { flex: 1; min-height: 0; max-height: 265px; margin-bottom: 10px; }
+.v3-question-body .v3-puzzle { flex: 1; min-height: 120px; max-height: 265px; margin-bottom: 10px; }
 .v3-question-body .v3-puzzle > img { height: 100%; max-height: none; }
-.v3-question-body .v3-image-options { flex: 1.4; min-height: 0; max-height: 260px; grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.v3-question-body .v3-image-options { flex: 1.4; min-height: 200px; max-height: 260px; grid-template-rows: repeat(2, minmax(0, 1fr)); }
 .v3-question-body .v3-image-options .v3-option { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; padding: 6px 10px; gap: 2px; }
 .v3-question-body .v3-image-options img { min-height: 0; height: 100%; }
 .v3-question-body .v3-object-options .v3-option { padding: 8px 4px; min-height: 0; gap: 4px; }
@@ -208,8 +209,9 @@ html:has(.v3-quiz-shell) { overflow: hidden; }
   .v3-question-body:has(.v3-options) { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 24px; }
   .v3-question-body:has(.v3-options) > .v3-question-intro { grid-column: 1; grid-row: 1 / 3; align-self: center; }
   .v3-question-body:has(.v3-puzzle) > .v3-question-intro { grid-row: 1; }
-  .v3-question-body > .v3-puzzle { grid-column: 1; grid-row: 2; height: 100%; margin: 0; }
+  .v3-question-body > .v3-puzzle { grid-column: 1; grid-row: 2; height: 100%; min-height: 0; margin: 0; }
   .v3-question-body > .v3-options { grid-column: 2; grid-row: 1 / 3; align-self: stretch; max-height: none; }
+  .v3-question-body > .v3-image-options { min-height: 0; }
   .v3-question-body > .v3-selection-hint { grid-column: 1 / -1; grid-row: 3; }
   .v3-question-body .v3-option { min-height: 0; padding: 6px 12px; font-size: 13px; }
 }
