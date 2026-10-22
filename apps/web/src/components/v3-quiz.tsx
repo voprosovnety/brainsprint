@@ -50,25 +50,40 @@ export function V3Quiz(props: Props) {
 }
 function Choices({ screen, busy, saving, onSubmit, draft }: Props) {
   const [selection, setSelection] = useState({ step: screen.id, choice: draft && "choice" in draft ? draft.choice : "" });
+  const [confirming, setConfirming] = useState(false);
+  const confirmation = useRef<number | null>(null);
   const group = useRef<HTMLDivElement>(null);
+  const locked = busy || confirming;
+  useEffect(() => () => { if (confirmation.current !== null) window.clearTimeout(confirmation.current); }, []);
   const options = screen.options || [];
   const selected = selection.step === screen.id && options.some(option => option.id === selection.choice) ? selection.choice : "";
   const image = screen.presentation === "image";
   const objects = screen.presentation === "objects";
   const description = diagrams[keyFor(screen)];
+  function choose(choice: string) {
+    if (locked || confirmation.current !== null) return;
+    setSelection({ step: screen.id, choice });
+    setConfirming(true);
+    // Paint the visitor's choice before replacing this question with its successor.
+    confirmation.current = window.setTimeout(() => {
+      confirmation.current = null;
+      setConfirming(false);
+      onSubmit({ choice });
+    }, 180);
+  }
   function keyboard(event: KeyboardEvent<HTMLButtonElement>, index: number) {
-    if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || busy) return;
+    if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || locked) return;
     event.preventDefault();
     const next = event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : (index + (["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : -1) + options.length) % options.length;
     setSelection({ step: screen.id, choice: options[next].id });
     group.current?.querySelectorAll<HTMLButtonElement>("[role=radio]")[next]?.focus();
   }
-  return <section className={`v3-question ${image ? "v3-visual-question" : ""} ${screen.role === "demographic" ? "v3-demographic-question" : ""}`} aria-busy={saving}>
+  return <section className={`v3-question ${image ? "v3-visual-question" : ""} ${screen.role === "demographic" ? "v3-demographic-question" : ""}`} aria-busy={saving || confirming}>
     <div className="v3-question-body" role="region" aria-label="Question content" tabIndex={0}>
     <div className="v3-question-intro"><p className="v3-eyebrow">{screen.role === "demographic" ? "A little about you" : screen.type === "scale" ? "Your perspective" : image ? "Look a little closer" : "Follow your curiosity"}</p><h1 id="v3-question-title">{screen.title}</h1><p>{screen.description}</p></div>
     {screen.asset && <div className="v3-puzzle"><img src={screen.asset} decoding="sync" loading="eager" alt={description?.prompt || screen.asset_alt || "An illustrated landmark"} /></div>}
     <div ref={group} className={`v3-options ${image ? "v3-image-options" : objects ? "v3-object-options" : screen.type === "scale" ? "v3-scale-options" : ""}`} role="radiogroup" aria-labelledby="v3-question-title">
-      {options.map((option, i) => <button key={option.id} type="button" role="radio" aria-checked={selected === option.id} disabled={busy} tabIndex={selected ? selected === option.id ? 0 : -1 : i === 0 ? 0 : -1} onKeyDown={e => keyboard(e, i)} className="v3-option" onClick={event => { if (busy) return; if (event.detail > 0) event.currentTarget.blur(); setSelection({ step: screen.id, choice: option.id }); onSubmit({ choice: option.id }); }}>
+      {options.map((option, i) => <button key={option.id} type="button" role="radio" aria-checked={selected === option.id} disabled={locked} tabIndex={selected ? selected === option.id ? 0 : -1 : i === 0 ? 0 : -1} onKeyDown={e => keyboard(e, i)} className="v3-option" onClick={event => { if (locked) return; if (event.detail > 0) event.currentTarget.blur(); choose(option.id); }}>
         {option.asset && <img src={option.asset} decoding="sync" loading="eager" alt={description?.options[i] || `Option ${option.label}`} />}
         {objects && <ObjectDrawing label={option.label} />}
         <span>{screen.type === "scale" && <span className="v3-scale-number" aria-hidden="true">{i + 1}</span>}{option.label}</span><span className="v3-option-indicator" aria-hidden="true">{selected === option.id ? "✓" : ""}</span>
@@ -76,7 +91,7 @@ function Choices({ screen, busy, saving, onSubmit, draft }: Props) {
     </div>
     <p className="v3-selection-hint">Choose an answer to continue. Use arrow keys to select, then Continue.</p>
     </div>
-    <div className="v3-actions"><button className="v3-primary" disabled={busy || !selected} onClick={() => { if (!busy && selected) onSubmit({ choice: selected }); }}>{saving ? "Saving your answer…" : "Continue"}<span aria-hidden="true">→</span></button></div>
+    <div className="v3-actions"><button className="v3-primary" disabled={locked || !selected} onClick={() => { if (!locked && selected) onSubmit({ choice: selected }); }}>{saving ? "Saving your answer…" : "Continue"}<span aria-hidden="true">→</span></button></div>
   </section>;
 }
 function Reveal({ screen, busy, saving, onSubmit }: Props) {
