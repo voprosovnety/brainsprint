@@ -29,7 +29,7 @@ Quiz screens fill the available viewport without page scrolling. Question headin
 
 Ordinary questions can display their configured successor while the preceding answer saves. The next answer remains locked until the server confirms that write. Report generation and offer transitions wait for confirmed server state. A failed save returns to the submitted step with its exact answer retained for retry. Refresh restores confirmed progress; browser history may review completed steps without skipping ahead.
 
-Choice state belongs to a specific question. Selecting an option submits it immediately; keyboard selection enables Continue. Continue stays visibly inactive until an answer is selected and the previous save is confirmed. The submission handler also validates the choice against the current question before previewing its successor.
+Choice state belongs to a specific question. Selecting an option submits it immediately; keyboard selection enables Continue. Answer highlighting reflects selection only, so a stationary pointer or sticky touch hover cannot make the next question appear preselected. Keyboard focus has a separate visible outline. Continue stays visibly inactive until an answer is selected and the previous save is confirmed. The submission handler also validates the choice against the current question before previewing its successor.
 
 Upcoming artwork is preloaded and decoded before a question is presented. Native dialogs are centered and scroll within the viewport. Keyboard controls, visible focus, safe-area spacing and reduced-motion presentation support the same journey. Timed reveals and elapsed time are presentation features, not measurements of ability.
 
