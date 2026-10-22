@@ -51,11 +51,12 @@ html:has(.v3-shell dialog[open]) { overflow: hidden; }
 .v3-word-card > span:last-child { font-size: 12px; color: #777993; }
 .v3-word-spark { font-size: 38px; color: var(--v3-violet); }
 .v3-options { display: grid; grid-template-columns: 1fr; gap: 10px; }
-.v3-option { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; min-height: 59px; border: 1.5px solid #e1e3ec; border-radius: 12px; background: #fff; color: var(--v3-ink); text-align: left; padding: 16px 19px; font-size: 15px; transition: background .15s, border-color .15s; }
-/* A stationary pointer or sticky touch hover must not imply an answer on the next question. */
-.v3-option.is-selected { background: #eeeefe; border-color: var(--v3-accent); box-shadow: 0 0 0 1px var(--v3-accent); }
+.v3-option { -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; min-height: 59px; border: 1.5px solid #e1e3ec; border-radius: 12px; background: #fff; color: var(--v3-ink); text-align: left; padding: 16px 19px; font-size: 15px; transition: background .15s, border-color .15s; }
+/* Safari's native pressed appearance and retained touch states must not imply selection. */
+.v3-option[aria-checked="false"]:is(:hover, :active, :focus) { background: #fff; border-color: #e1e3ec; box-shadow: none; }
+.v3-option[aria-checked="true"] { background: #eeeefe; border-color: var(--v3-accent); box-shadow: 0 0 0 1px var(--v3-accent); }
 .v3-option-indicator { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 19px; height: 19px; border: 1px solid #d6d8e2; border-radius: 50%; font-size: 11px; color: white; }
-.is-selected .v3-option-indicator { background: var(--v3-accent); border-color: var(--v3-accent); }
+.v3-option[aria-checked="true"] .v3-option-indicator { background: var(--v3-accent); border-color: var(--v3-accent); }
 .v3-selection-hint { color: var(--v3-muted); text-align: center; font-size: 11px; margin-top: 15px; }
 .v3-scale-options .v3-option > span:first-child { display: flex; align-items: center; gap: 14px; }
 .v3-scale-number { color: #a0a2b6; font: 12px ui-monospace, monospace; min-width: 12px; }
