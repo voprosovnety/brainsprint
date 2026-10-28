@@ -38,5 +38,6 @@ jobs:
           cd apps/api && php artisan key:generate
       - run: cd apps/api && php artisan test --compact --filter='FunnelProgressionTest|AnalyticsExposureTest|AnalyticsAggregateTest|AdminDemoAnalyticsTest|ReleaseLifecycleTest|SharedCacheTest'
       - run: npm ci --prefix apps/web --no-audit --no-fund
+      - run: node --experimental-strip-types --test apps/web/tests/*.test.mjs
       - run: npm run build --prefix apps/web
       - run: npm run typecheck --prefix apps/web

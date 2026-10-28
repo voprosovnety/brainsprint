@@ -7,6 +7,8 @@ import { Privacy } from "./privacy";
 import { V3Quiz } from "./v3-quiz";
 import { V3Commerce } from "./v3-commerce";
 import { prepareScreenAssets, screenAssetsReady, warmFunnelAssets, warmUpcomingAssets } from "@/lib/v3-assets";
+import { appendAnswer, canQueueAnswer, queuedStep, readAnswerQueue, reconcileAnswers, writeAnswerQueue } from "@/lib/v3-answer-queue";
+import type { QueuedAnswer } from "@/lib/v3-answer-queue";
 
 function allowed(run: V3Run, id: string) {
   return id === run.current_step || run.completed_steps.includes(id);
@@ -27,7 +29,13 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   const [view, setView] = useState(initial.run?.current_step || initial.configuration.entry);
   const [busy, setBusy] = useState(!initial.run);
   const [error, setError] = useState("");
-  const [pending, setPending] = useState<{ step: string; answer: V3Answer } | null>(null);
+  const [pending, setPending] = useState<QueuedAnswer | null>(null);
+  const [queue, setQueue] = useState<QueuedAnswer[]>([]);
+  const answerQueue = useRef<QueuedAnswer[]>([]);
+  const [syncError, setSyncError] = useState("");
+  const [storageWarning, setStorageWarning] = useState(false);
+  const syncPaused = useRef(false);
+  const mounted = useRef(true);
   const [navigating, setNavigating] = useState(false);
   const [imageFailure, setImageFailure] = useState<{ step: string; message: string } | null>(null);
   const navigation = useRef(0);
@@ -50,7 +58,7 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
     viewRef.current = id;
     setImageFailure(null);
     const present = () => {
-      if (token !== navigation.current) return;
+      if (!mounted.current || token !== navigation.current) return;
       setView(id); setNavigating(false);
       const url = new URL(window.location.href);
       url.searchParams.set("screen", id);
@@ -61,14 +69,14 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
     setNavigating(true);
     // Present one complete question, never text first and illustrations later.
     void prepareScreenAssets(target).then(present, (failure: Error) => {
-      if (token !== navigation.current) return;
+      if (!mounted.current || token !== navigation.current) return;
       setNavigating(false); setImageFailure({ step: id, message: failure.message });
     });
   }
   function accept(value: V3Run) { runRef.current = value; setRun(value); }
   async function flushViews() {
     const current = runRef.current;
-    if (!current || writing.current || deliveringView.current) return;
+    if (!mounted.current || !current || writing.current || deliveringView.current) return;
     const next = [...observedViews.current.entries()].find(([, event]) => event.run_id === current.id && !!event.step_id && allowed(current, event.step_id));
     if (!next) return;
     const [key, event] = next;
@@ -82,57 +90,110 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
     observedViews.current.set(`${name}:${id}`, { name, run_id: current.id, step_id: id });
     void flushViews();
   }
+  function keepQueue(answers: QueuedAnswer[], current = runRef.current) {
+    answerQueue.current = answers; setQueue(answers);
+    if (current) {
+      const persisted = writeAnswerQueue(current, answers);
+      setStorageWarning(answers.length > 0 && !persisted);
+    }
+  }
+  function resume(value: V3Run, history = false) {
+    const current = runRef.current;
+    const inMemory = current?.id === value.id && current.configuration_version === value.configuration_version
+      && answerQueue.current.length ? reconcileAnswers(value, answerQueue.current) : null;
+    accept(value);
+    const answers = inMemory || readAnswerQueue(value);
+    keepQueue(answers, value); syncPaused.current = false; setSyncError("");
+    show(answers.length ? queuedStep(value, answers) : history ? requested(value) : value.current_step, true);
+  }
+  async function syncAnswers() {
+    if (!mounted.current || writing.current || syncPaused.current || !answerQueue.current.length) return;
+    writing.current = true; setBusy(true); setSyncError("");
+    try {
+      while (mounted.current && answerQueue.current.length) {
+        const current = runRef.current!;
+        const submission = answerQueue.current[0];
+        const value = await api<V3Run>(`runs/${current.id}/steps/${encodeURIComponent(submission.step)}/complete`, { answer: submission.answer });
+        if (!mounted.current) return;
+        const remaining = reconcileAnswers(value, answerQueue.current);
+        if (!remaining || remaining.length >= answerQueue.current.length) {
+          throw new Error("Your saved progress changed. Check your saved progress before retrying.");
+        }
+        accept(value); keepQueue(remaining, value);
+      }
+    } catch (e) {
+      if (mounted.current) {
+        syncPaused.current = true;
+        setSyncError((e as Error).message || "Your answers could not be synced. Reconnect and retry saving.");
+      }
+    } finally {
+      writing.current = false;
+      if (mounted.current) { setBusy(false); void flushViews(); }
+    }
+  }
+  function retryAnswers() { syncPaused.current = false; void syncAnswers(); }
   async function start() {
     if (writing.current) return;
     writing.current = true; setBusy(true); setError("");
     try {
       const value = await api<V3Run>("runs", { attribution: campaign() });
-      accept(value); show(requested(value), true);
-    } catch (e) { setError((e as Error).message || "Your challenge could not start. Please try again."); }
-    finally { writing.current = false; setBusy(false); }
+      if (mounted.current) resume(value, true);
+    } catch (e) { if (mounted.current) setError((e as Error).message || "Your challenge could not start. Please try again."); }
+    finally { writing.current = false; if (mounted.current) { setBusy(false); void syncAnswers(); } }
   }
   async function restore() {
     if (writing.current) return;
     writing.current = true; setBusy(true); setError("");
     try {
       const value = await api<V3Bootstrap>("bootstrap");
-      if (value.run) { accept(value.run); setPending(null); show(value.run.current_step, true); }
+      if (!mounted.current) return;
+      if (value.run) { setPending(null); resume(value.run); }
       else window.location.replace("/");
-    } catch (e) { setError((e as Error).message || "Your progress could not be restored. Please try again."); }
-    finally { writing.current = false; setBusy(false); }
+    } catch (e) {
+      if (mounted.current) {
+        const message = (e as Error).message || "Your progress could not be restored. Please try again.";
+        if (answerQueue.current.length) setSyncError(message);
+        else setError(message);
+      }
+    }
+    finally { writing.current = false; if (mounted.current) { setBusy(false); void syncAnswers(); } }
   }
   async function save(answer: V3Answer, step = viewRef.current) {
     const current = runRef.current;
-    if (!current || writing.current || current.demo_completed || step !== current.current_step
-      || navigating || imageFailure
+    if (!current || current.demo_completed || navigating || imageFailure
       || (viewRef.current !== step && pending?.step !== step)) return;
     const source = current.configuration.steps.find(screen => screen.id === step);
     if (!source) return;
-    // Validate against this question before any optimistic navigation.
-    if ((source.type === "single_choice" || source.type === "scale")
-      && (!("choice" in answer) || !source.options?.some(option => option.id === answer.choice))) return;
-    // Only deterministic, noncommercial presentation can lead server confirmation.
-    // The next answer stays locked until this write succeeds; private report/offer state is never projected.
-    const target = current.configuration.steps.find(screen => screen.id === source?.next);
-    const preview = source && target && ["word_intro", "single_choice", "scale", "timed_reveal", "interstitial"].includes(source.type)
-      && !["paywall", "upsell", "final"].includes(target.type) ? target.id : null;
+    if (canQueueAnswer(source)) {
+      const answers = appendAnswer(current, answerQueue.current, step, answer);
+      if (!answers) return;
+      // Advance independently of network latency, after retaining the exact answer.
+      keepQueue(answers); show(source.next); void syncAnswers();
+      return;
+    }
+    // Reports, email and commerce use confirmed server state and never enter tab storage.
+    if (writing.current || answerQueue.current.length || step !== current.current_step) return;
     writing.current = true; setBusy(true); setError(""); setPending({ step, answer });
-    if (preview) show(preview);
     try {
       const value = await api<V3Run>(`runs/${current.id}/steps/${encodeURIComponent(step)}/complete`, { answer });
-      accept(value); setPending(null);
-      if (!preview || value.current_step !== preview || viewRef.current === step) show(value.current_step);
+      if (!mounted.current) return;
+      accept(value); setPending(null); show(value.current_step);
     } catch (e) {
-      setError((e as Error).message || "Your answer could not be saved. Retry when you are connected.");
-      // Return to the exact unsaved answer, including an identical retry after a lost response.
-      if (preview) show(step, true);
-    } finally { writing.current = false; setBusy(false); void flushViews(); }
+      if (mounted.current) setError((e as Error).message || "Your answer could not be saved. Retry when you are connected.");
+    } finally {
+      writing.current = false;
+      if (mounted.current) { setBusy(false); void flushViews(); }
+    }
   }
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
     try { setDeleted(sessionStorage.getItem("brainsprint-data-deleted") === "1"); sessionStorage.removeItem("brainsprint-data-deleted"); } catch {}
-    if (initial.run) show(requested(initial.run), true);
+    if (initial.run) { resume(initial.run, true); void syncAnswers(); }
     else void start();
     // Initialization is once per mounted visitor, including React strict effects.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -141,10 +202,12 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
     const interval = window.setInterval(() => setNow(Date.now()), 1000);
     function pop() {
       const current = runRef.current;
-      if (current) show(writing.current ? viewRef.current : requested(current), true);
+      if (current) show(writing.current || answerQueue.current.length ? viewRef.current : requested(current), true);
     }
     window.addEventListener("popstate", pop);
-    return () => { clearInterval(interval); window.removeEventListener("popstate", pop); };
+    const online = () => retryAnswers();
+    window.addEventListener("online", online);
+    return () => { clearInterval(interval); window.removeEventListener("popstate", pop); window.removeEventListener("online", online); };
   }, []);
   useEffect(() => {
     if (navigating) return;
@@ -159,10 +222,11 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   const commercial = !!screen && ["paywall", "upsell", "final"].includes(screen.type) && (!saved || screen.type === "final");
   const responses = config.steps.filter(s => s.enabled && ["single_choice", "scale"].includes(s.type));
   const confirmed = responses.filter(s => run?.completed_steps.includes(s.id)).length;
-  const completed = confirmed + (busy && pending && view !== pending.step && !run?.completed_steps.includes(pending.step) && responses.some(s => s.id === pending.step) ? 1 : 0);
+  const completed = responses.filter(screen => run?.completed_steps.includes(screen.id) || queue.some(answer => answer.step === screen.id)).length;
   const progress = responses.length ? Math.round(completed / responses.length * 100) : 0;
-  const locked = busy || !!pending || navigating || !!imageFailure || !run;
-  const previewing = busy && !!pending && pending.step !== view;
+  const locked = busy || !!pending || queue.length > 0 || navigating || !!imageFailure || !run;
+  const quizLocked = screen && canQueueAnswer(screen) ? navigating || !!imageFailure || !run : locked;
+  const waitingForSync = queue.length > 0 && !!screen && !canQueueAnswer(screen);
   useEffect(() => {
     warmUpcomingAssets(config, view === "done" && run ? finalScreen(run)?.id || config.entry : view);
     warmFunnelAssets(config, run?.configuration_version || initial.configuration_version);
@@ -189,9 +253,13 @@ export function V3Funnel({ initial }: { initial: V3Bootstrap }) {
   }, [view, run?.id, navigating]);
   return <div className={`v3-shell${commercial ? "" : " v3-quiz-shell"}`}>
     {!commercial && <header className="v3-header"><div className="v3-header-row"><a className="v3-brand" href="/" onClick={e => e.preventDefault()} aria-label="BrainSprint"><span className="v3-brand-icon" aria-hidden="true">✳</span>BrainSprint</a><div className="v3-header-tools"><span className="v3-timer" aria-label={`Elapsed time ${elapsed(run?.started_at, now)}`}><span aria-hidden="true">◷</span> {elapsed(run?.started_at, now)}</span><button type="button" className="v3-info-button" aria-label="About this demo and your saved progress" onClick={() => information.current?.showModal()}>ⓘ</button></div></div><div className="v3-progress" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={responses.length} aria-valuenow={completed}><span style={{ width: `${progress}%` }} /></div></header>}
-    <main ref={headingRegion} className={`${commercial ? "v3-commerce-main" : "v3-main"}${previewing || navigating || imageFailure ? " v3-inflight-preview" : ""}`}>
+    {!commercial && (syncError || storageWarning || waitingForSync) && <div className="v3-sync-notice" role="status">
+      <p>{storageWarning ? "Keep this tab open until your answers finish saving." : syncError ? "Your answers are kept in this tab. You can keep answering while saving is paused." : "Saving your answers before preparing your report…"}</p>
+      {syncError && <><p>{syncError}</p><div><button className="v3-text-button" disabled={busy} onClick={retryAnswers}>Retry saving</button><button className="v3-text-button" disabled={busy} onClick={restore}>Check saved progress</button></div></>}
+    </div>}
+    <main ref={headingRegion} className={`${commercial ? "v3-commerce-main" : "v3-main"}${navigating || imageFailure ? " v3-inflight-preview" : ""}`}>
       {deleted && <p className={`v3-notice${commercial ? "" : " v3-sr-only"}`} role="status">Your saved data was deleted. This is a new anonymous visit.</p>}
-      {screen && !screenAssetsReady(screen) ? <section className="v3-question v3-saved" aria-busy="true"><h1>Opening your question…</h1><p role="status">Preparing the illustration.</p></section> : screen ? saved && screen.type !== "final" ? <SavedScreen screen={screen} run={run!} onContinue={() => show(run!.current_step)} /> : commercial && run ? <V3Commerce key={screen.id} screen={screen} run={run} busy={locked} onSubmit={answer => { void save(answer, screen.id); }} /> : <V3Quiz key={screen.id} screen={screen} busy={locked} saving={busy && !previewing} draft={pending?.step === screen.id ? pending.answer : undefined} onSubmit={answer => { void save(answer, screen.id); }} progress={progress} /> : <section className="v3-loading"><h1>Your saved progress is here.</h1><p>Restore your current screen to continue.</p><button className="v3-primary" disabled={busy} onClick={restore}>Restore progress</button></section>}
+      {screen && !screenAssetsReady(screen) ? <section className="v3-question v3-saved" aria-busy="true"><h1>Opening your question…</h1><p role="status">Preparing the illustration.</p></section> : screen ? saved && screen.type !== "final" ? <SavedScreen screen={screen} run={run!} onContinue={() => show(run!.current_step)} /> : commercial && run ? <V3Commerce key={screen.id} screen={screen} run={run} busy={locked} onSubmit={answer => { void save(answer, screen.id); }} /> : <V3Quiz key={screen.id} screen={screen} busy={!!quizLocked} saving={waitingForSync || (busy && !!pending)} draft={pending?.step === screen.id ? pending.answer : undefined} onSubmit={answer => { void save(answer, screen.id); }} progress={progress} /> : <section className="v3-loading"><h1>Your saved progress is here.</h1><p>Restore your current screen to continue.</p><button className="v3-primary" disabled={busy} onClick={restore}>Restore progress</button></section>}
       {imageFailure && <div className="v3-error" role="alert" tabIndex={-1} ref={errorRegion}><p>{imageFailure.message}</p><div><button className="v3-primary" onClick={() => show(imageFailure.step, true)}>Retry illustration</button><button className="v3-text-button" disabled={busy} onClick={restore}>Restore saved progress</button></div></div>}
       {error && <div className="v3-error" role="alert" tabIndex={-1} ref={errorRegion}><p>{error}</p>{pending && <p>Your selected answer is kept for an identical retry.</p>}<div><button className="v3-primary" disabled={busy} onClick={() => pending ? void save(pending.answer, pending.step) : run ? void restore() : void start()}>{busy ? "Saving…" : pending ? "Retry saving" : "Try again"}</button>{run && <button className="v3-text-button" disabled={busy} onClick={restore}>Restore saved progress</button>}</div></div>}
     </main>

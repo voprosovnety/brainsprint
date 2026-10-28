@@ -194,7 +194,9 @@ html:has(.v3-quiz-shell) { overflow: hidden; }
 .v3-quiz-shell .v3-loading { min-height: 0; flex: 1; }
 .v3-information .v3-privacy, .v3-information .v3-footer { width: 100%; }
 .v3-information .privacy-note summary { margin: auto; }
-/* Answer options remain readable while the preceding write is in flight. */
+.v3-sync-notice { flex: none; width: min(100% - 40px, 520px); margin: 10px auto 0; padding: 10px 12px; border-radius: 10px; background: #eaecff; color: #4f5165; font-size: 12px; }
+.v3-sync-notice > div { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+/* Answer options remain readable while preparing the next illustration. */
 .v3-inflight-preview .v3-option:disabled { opacity: 1; cursor: progress; }
 
 @container (max-height: 400px) {

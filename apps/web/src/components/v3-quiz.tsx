@@ -50,26 +50,19 @@ export function V3Quiz(props: Props) {
 }
 function Choices({ screen, busy, saving, onSubmit, draft }: Props) {
   const [selection, setSelection] = useState({ step: screen.id, choice: draft && "choice" in draft ? draft.choice : "" });
-  const [confirming, setConfirming] = useState(false);
-  const confirmation = useRef<number | null>(null);
+  const submitted = useRef(false);
   const group = useRef<HTMLDivElement>(null);
-  const locked = busy || confirming;
-  useEffect(() => () => { if (confirmation.current !== null) window.clearTimeout(confirmation.current); }, []);
+  const locked = busy;
   const options = screen.options || [];
   const selected = selection.step === screen.id && options.some(option => option.id === selection.choice) ? selection.choice : "";
   const image = screen.presentation === "image";
   const objects = screen.presentation === "objects";
   const description = diagrams[keyFor(screen)];
   function choose(choice: string) {
-    if (locked || confirmation.current !== null) return;
+    if (locked || submitted.current) return;
+    submitted.current = true;
     setSelection({ step: screen.id, choice });
-    setConfirming(true);
-    // Paint the visitor's choice before replacing this question with its successor.
-    confirmation.current = window.setTimeout(() => {
-      confirmation.current = null;
-      setConfirming(false);
-      onSubmit({ choice });
-    }, 180);
+    onSubmit({ choice });
   }
   function keyboard(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || locked) return;
@@ -78,7 +71,7 @@ function Choices({ screen, busy, saving, onSubmit, draft }: Props) {
     setSelection({ step: screen.id, choice: options[next].id });
     group.current?.querySelectorAll<HTMLButtonElement>("[role=radio]")[next]?.focus();
   }
-  return <section className={`v3-question ${image ? "v3-visual-question" : ""} ${screen.role === "demographic" ? "v3-demographic-question" : ""}`} aria-busy={saving || confirming}>
+  return <section className={`v3-question ${image ? "v3-visual-question" : ""} ${screen.role === "demographic" ? "v3-demographic-question" : ""}`} aria-busy={saving}>
     <div className="v3-question-body" role="region" aria-label="Question content" tabIndex={0}>
     <div className="v3-question-intro"><p className="v3-eyebrow">{screen.role === "demographic" ? "A little about you" : screen.type === "scale" ? "Your perspective" : image ? "Look a little closer" : "Follow your curiosity"}</p><h1 id="v3-question-title">{screen.title}</h1><p>{screen.description}</p></div>
     {screen.asset && <div className="v3-puzzle"><img src={screen.asset} decoding="sync" loading="eager" alt={description?.prompt || screen.asset_alt || "An illustrated landmark"} /></div>}
@@ -91,7 +84,7 @@ function Choices({ screen, busy, saving, onSubmit, draft }: Props) {
     </div>
     <p className="v3-selection-hint">Choose an answer to continue. Use arrow keys to select, then Continue.</p>
     </div>
-    <div className="v3-actions"><button className="v3-primary" disabled={locked || !selected} onClick={() => { if (!locked && selected) onSubmit({ choice: selected }); }}>{saving ? "Saving your answer…" : "Continue"}<span aria-hidden="true">→</span></button></div>
+    <div className="v3-actions"><button className="v3-primary" disabled={locked || !selected} onClick={() => { if (selected) choose(selected); }}>{saving ? "Saving your answer…" : "Continue"}<span aria-hidden="true">→</span></button></div>
   </section>;
 }
 function Reveal({ screen, busy, saving, onSubmit }: Props) {

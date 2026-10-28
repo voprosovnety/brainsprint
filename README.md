@@ -46,7 +46,7 @@ BrainSprint takes visitors through word memory, number recall and visual reasoni
 
 **Remember a word → Solve the challenges → Explore a sample report → Try the mock offers**
 
-One task per screen, original SVG artwork and a calm lavender palette keep the experience focused. Upcoming artwork is preloaded; failed saves retain the selected answer for retry.
+One task per screen, original SVG artwork and a calm lavender palette keep the experience focused. Upcoming artwork is preloaded. Quiz answers advance immediately and save in order in the background; pending answers survive a reload in the same tab.
 
 > **About the demo** · An entertainment experience with illustrative reports, independent of answer correctness. It does not measure IQ or cognitive ability. All prices, checkouts and subscriptions are simulated; no payments are collected.
 
@@ -138,7 +138,7 @@ Run setup again to resume PostgreSQL. After schema or funnel changes, run `php a
 <details>
 <summary><strong>Automated checks and coverage</strong></summary>
 
-GitHub Actions defines PostgreSQL regression tests, a production frontend build and TypeScript checks. The v3 API suites cover full journey progression, both guide outcomes, immutable retries, private report access, configuration publication, ownership and analytics. Shared suites cover administration, retention and cache boundaries. These automated checks do not establish browser or visual acceptance.
+GitHub Actions defines PostgreSQL regression tests, frontend unit tests, a production frontend build and TypeScript checks. Queue tests cover immediate quiz progression, ordered replay, reload recovery, draft scoping, duplicate input and unavailable browser storage. The v3 API suites cover full journey progression, both guide outcomes, immutable retries, private report access, configuration publication, ownership and analytics. Shared suites cover administration, retention and cache boundaries. These automated checks do not establish browser or visual acceptance.
 
 Local tests must use the isolated `brainsprint_test` database. Helpers live in `apps/api/tests/` and `infra/checks/`; see [production-package checks](docs/DEPLOYMENT.md#reproduce-the-local-production-package-check) for the release fixture.
 
